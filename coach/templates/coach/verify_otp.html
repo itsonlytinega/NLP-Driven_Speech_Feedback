@@ -1,0 +1,116 @@
+{% extends 'coach/base.html' %}
+
+{% block title %}Verify OTP Code - Verbal Coach{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <div class="text-center">
+            <div class="mx-auto h-12 w-12 text-green-600">
+                <i class="fas fa-envelope text-4xl"></i>
+            </div>
+            <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
+                Enter Verification Code
+            </h2>
+            <p class="mt-2 text-sm text-gray-600">
+                We've sent a 6-digit code to your email address
+            </p>
+        </div>
+        
+        <div class="bg-white shadow rounded-lg p-6">
+            <div class="mb-6">
+                <p class="text-sm text-gray-600 text-center">
+                    Hello <strong>{{ user.first_name }}</strong>, enter the code sent to 
+                    <strong>{{ user.email }}</strong>
+                </p>
+            </div>
+            
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                
+                <div>
+                    <label for="id_otp_code" class="block text-sm font-medium text-gray-700 text-center">
+                        Verification Code
+                    </label>
+                    <div class="mt-2">
+                        {{ form.otp_code }}
+                        {% if form.otp_code.errors %}
+                            <div class="mt-1 text-sm text-red-600">
+                                {% for error in form.otp_code.errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if form.otp_code.help_text %}
+                            <p class="mt-1 text-xs text-gray-500 text-center">{{ form.otp_code.help_text }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div>
+                    <button type="submit"
+                            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                            <i class="fas fa-check text-green-500 group-hover:text-green-400"></i>
+                        </span>
+                        Verify Code
+                    </button>
+                </div>
+                
+                <div class="text-center">
+                    <a href="{% url 'coach:choose_2fa_method' %}" class="text-sm text-gray-600 hover:text-gray-500">
+                        <i class="fas fa-arrow-left mr-1"></i>
+                        Back to Method Selection
+                    </a>
+                </div>
+            </form>
+        </div>
+        
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-clock text-yellow-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-yellow-700">
+                        <strong>Code Expires:</strong> This verification code will expire in 5 minutes. 
+                        If you don't receive it, you can request a new one.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const otpInput = document.getElementById('id_otp_code');
+    
+    // Auto-focus on the OTP input
+    if (otpInput) {
+        otpInput.focus();
+        
+        // Format input as user types (add spaces for readability)
+        otpInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+            if (value.length > 6) {
+                value = value.slice(0, 6);
+            }
+            e.target.value = value;
+        });
+        
+        // Auto-submit when 6 digits are entered
+        otpInput.addEventListener('input', function(e) {
+            if (e.target.value.length === 6) {
+                // Optional: Auto-submit after a short delay
+                // setTimeout(() => {
+                //     e.target.form.submit();
+                // }, 500);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+
+

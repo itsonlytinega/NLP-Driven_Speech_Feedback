@@ -1,0 +1,126 @@
+{% extends 'coach/base.html' %}
+
+{% block title %}Choose 2FA Method - Verbal Coach{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <div class="text-center">
+            <div class="mx-auto h-12 w-12 text-blue-600">
+                <i class="fas fa-shield-alt text-4xl"></i>
+            </div>
+            <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
+                Two-Factor Authentication
+            </h2>
+            <p class="mt-2 text-sm text-gray-600">
+                Choose how you'd like to complete your login
+            </p>
+        </div>
+        
+        <div class="bg-white shadow rounded-lg p-6">
+            <div class="mb-6">
+                <p class="text-sm text-gray-600 text-center">
+                    Hello <strong>{{ user.first_name }}</strong>, please choose your preferred 2FA method:
+                </p>
+            </div>
+            
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                
+                <div class="space-y-3">
+                    <div class="relative">
+                        <input type="radio" id="totp" name="method" value="totp" class="sr-only" required>
+                        <label for="totp" class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-mobile-alt text-2xl text-blue-600 mr-3"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <div class="text-sm font-medium text-gray-900">
+                                        Use Authenticator App (TOTP)
+                                    </div>
+                                    <div class="text-sm text-gray-500">
+                                        Use Google Authenticator, Authy, or similar app
+                                    </div>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                    
+                    <div class="relative">
+                        <input type="radio" id="email" name="method" value="email" class="sr-only" required>
+                        <label for="email" class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-envelope text-2xl text-green-600 mr-3"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <div class="text-sm font-medium text-gray-900">
+                                        Send OTP to Email
+                                    </div>
+                                    <div class="text-sm text-gray-500">
+                                        Receive a 6-digit code via email
+                                    </div>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                
+                <div>
+                    <button type="submit"
+                            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                            <i class="fas fa-arrow-right text-blue-500 group-hover:text-blue-400"></i>
+                        </span>
+                        Continue
+                    </button>
+                </div>
+                
+                <div class="text-center">
+                    <a href="{% url 'coach:login' %}" class="text-sm text-gray-600 hover:text-gray-500">
+                        <i class="fas fa-arrow-left mr-1"></i>
+                        Back to Login
+                    </a>
+                </div>
+            </form>
+        </div>
+        
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-info-circle text-blue-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-blue-700">
+                        <strong>Security:</strong> Both methods provide the same level of security. 
+                        Choose the one that's most convenient for you.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const radioButtons = document.querySelectorAll('input[name="method"]');
+    const labels = document.querySelectorAll('label[for="totp"], label[for="email"]');
+    
+    radioButtons.forEach(radio => {
+        radio.addEventListener('change', function() {
+            labels.forEach(label => {
+                label.classList.remove('ring-2', 'ring-blue-500', 'bg-blue-50');
+            });
+            
+            if (this.checked) {
+                const label = document.querySelector(`label[for="${this.id}"]`);
+                label.classList.add('ring-2', 'ring-blue-500', 'bg-blue-50');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+
+
