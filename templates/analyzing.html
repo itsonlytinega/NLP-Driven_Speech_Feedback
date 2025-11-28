@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Analyzing Speech...</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #0f172a;
+            color: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+        }
+        .spinner {
+            width: 72px;
+            height: 72px;
+            border: 6px solid rgba(148, 163, 184, 0.25);
+            border-top-color: #38bdf8;
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+            margin: 0 auto 24px;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        .status {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+        }
+        .subtext {
+            color: #94a3b8;
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="spinner" role="progressbar" aria-label="Analyzing speech"></div>
+        <div class="status">Analyzing your speech...</div>
+        <div class="subtext">Hang tight! GPU models are processing your audio.</div>
+    </div>
+</body>
+</html>
+
+
+
+
+
+
+

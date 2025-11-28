@@ -1,0 +1,434 @@
+{% extends 'coach/drill_unified_base.html' %}
+{% load static %}
+
+{% block drill_content %}
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="text-center">
+        <h2 class="text-3xl font-bold text-gray-800 mb-4">Echo Chamber Escalation</h2>
+        <p class="text-lg text-gray-600 mb-6">Match the app's paced replay with escalating difficulty levels!</p>
+    </div>
+
+    <!-- Difficulty Level -->
+    <div class="bg-gradient-to-r from-red-100 to-orange-100 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Difficulty Level</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Current Level -->
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Current Level</div>
+                <div id="current-level" class="text-4xl font-bold text-red-600">1</div>
+            </div>
+            
+            <!-- Speed Multiplier -->
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Speed Multiplier</div>
+                <div id="speed-multiplier" class="text-4xl font-bold text-orange-600">1.0x</div>
+            </div>
+            
+            <!-- Success Rate -->
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Success Rate</div>
+                <div id="success-rate" class="text-4xl font-bold text-green-600">0%</div>
+            </div>
+        </div>
+        
+        <!-- Level Progress -->
+        <div class="mt-6">
+            <div class="flex justify-between text-sm text-gray-600 mb-2">
+                <span>Level Progress</span>
+                <span id="level-progress">0/3</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-3">
+                <div id="level-progress-bar" class="bg-gradient-to-r from-red-500 to-orange-500 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Echo Controls -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Echo Controls</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Speed Controls -->
+            <div>
+                <h4 class="font-semibold text-gray-700 mb-3">Playback Speed</h4>
+                <div class="flex items-center space-x-4">
+                    <button onclick="decreaseSpeed()" 
+                            class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-semibold">
+                        ⬇️ Slower
+                    </button>
+                    <div class="text-center">
+                        <div id="current-speed" class="text-2xl font-bold text-blue-600">1.0x</div>
+                        <div class="text-sm text-gray-600">Current Speed</div>
+                    </div>
+                    <button onclick="increaseSpeed()" 
+                            class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-semibold">
+                        ⬆️ Faster
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Echo Settings -->
+            <div>
+                <h4 class="font-semibold text-gray-700 mb-3">Echo Settings</h4>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm text-gray-600">Echo Delay</label>
+                        <span id="echo-delay" class="text-sm font-semibold text-gray-800">0.5s</span>
+                    </div>
+                    <input type="range" id="delay-slider" min="0.1" max="2.0" step="0.1" value="0.5" 
+                           class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                           oninput="updateEchoDelay(this.value)">
+                    
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm text-gray-600">Echo Intensity</label>
+                        <span id="echo-intensity" class="text-sm font-semibold text-gray-800">Medium</span>
+                    </div>
+                    <input type="range" id="intensity-slider" min="0" max="100" step="25" value="50" 
+                           class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                           oninput="updateEchoIntensity(this.value)">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recording Section -->
+    <div class="bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Echo Recording</h3>
+        
+        <div class="text-center">
+            <button id="record-btn" onclick="startEchoRecording()" 
+                    class="px-8 py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold text-lg transition-colors">
+                🎤 Start Echo Recording
+            </button>
+            <div id="recording-status" class="mt-4 text-lg font-semibold text-gray-600">Ready to create your echo!</div>
+        </div>
+        
+        <!-- Audio Players -->
+        <div id="audio-players" class="mt-6 hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Original Recording -->
+                <div class="bg-white rounded-lg p-4">
+                    <h4 class="font-semibold text-gray-700 mb-3">Original Recording</h4>
+                    <audio controls class="w-full" id="original-audio">
+                        <source src="" type="audio/wav">
+                    </audio>
+                </div>
+                
+                <!-- Echo Playback -->
+                <div class="bg-white rounded-lg p-4">
+                    <h4 class="font-semibold text-gray-700 mb-3">Echo Playback</h4>
+                    <audio controls class="w-full" id="echo-audio">
+                        <source src="" type="audio/wav">
+                    </audio>
+                    <div class="mt-2 text-center">
+                        <button onclick="playEcho()" 
+                                class="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold">
+                            🔊 Play Echo
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Matching Challenge -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Speed Matching Challenge</h3>
+        
+        <div class="text-center mb-6">
+            <p class="text-lg text-gray-600 mb-4">Listen to the echo and try to match its speed!</p>
+            <div id="matching-instructions" class="text-sm text-gray-500">
+                Record your speech and we'll create an echo for you to match.
+            </div>
+        </div>
+        
+        <!-- Matching Controls -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button onclick="playOriginal()" 
+                    class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold">
+                🎵 Play Original
+            </button>
+            <button onclick="playEcho()" 
+                    class="px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold">
+                🔊 Play Echo
+            </button>
+            <button onclick="startMatching()" 
+                    class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold">
+                🎯 Start Matching
+            </button>
+        </div>
+        
+        <!-- Matching Feedback -->
+        <div id="matching-feedback" class="mt-6 hidden">
+            <div class="bg-gray-50 rounded-lg p-4">
+                <h4 class="font-semibold text-gray-700 mb-3">Matching Results</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="text-center">
+                        <div class="text-sm text-gray-600">Speed Accuracy</div>
+                        <div id="speed-accuracy" class="text-2xl font-bold text-blue-600">0%</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-sm text-gray-600">Timing Match</div>
+                        <div id="timing-match" class="text-2xl font-bold text-green-600">0%</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-sm text-gray-600">Overall Score</div>
+                        <div id="overall-score" class="text-2xl font-bold text-purple-600">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Escalation Progress -->
+    <div class="bg-gradient-to-r from-green-100 to-blue-100 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Escalation Progress</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Level</div>
+                <div id="escalation-level" class="text-3xl font-bold text-red-600">1</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Attempts</div>
+                <div id="attempts" class="text-3xl font-bold text-blue-600">0</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Perfect Matches</div>
+                <div id="perfect-matches" class="text-3xl font-bold text-green-600">0</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Best Score</div>
+                <div id="best-score" class="text-3xl font-bold text-purple-600">0</div>
+            </div>
+        </div>
+        
+        <!-- Level Requirements -->
+        <div class="mt-6 bg-white rounded-lg p-4">
+            <h4 class="font-semibold text-gray-700 mb-2">Level Requirements</h4>
+            <div id="level-requirements" class="text-sm text-gray-600">
+                <p>Level 1: Match speed within 20% accuracy</p>
+                <p>Level 2: Match speed within 15% accuracy</p>
+                <p>Level 3: Match speed within 10% accuracy</p>
+            </div>
+        </div>
+        
+        <!-- Echo Chamber Tips -->
+        <div class="mt-6 bg-white rounded-lg p-4">
+            <h4 class="font-semibold text-gray-700 mb-2">Echo Chamber Tips:</h4>
+            <ul class="text-sm text-gray-600 space-y-1">
+                <li>• Listen carefully to the echo's pacing and rhythm</li>
+                <li>• Practice matching the speed gradually</li>
+                <li>• Focus on timing rather than perfection</li>
+                <li>• Use the speed controls to adjust difficulty</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Feedback -->
+    <div id="feedback-container" class="bg-gray-50 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Echo Chamber Feedback</h3>
+        <div id="feedback-buttons"></div>
+    </div>
+</div>
+
+<script>
+// Drill-specific JavaScript
+function getDrillSpecificParams() {
+    // Override this function in individual drill templates if needed
+    return {};
+}
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/drills.js' %}"></script>
+<script>
+    let currentLevel = 1;
+    let speedMultiplier = 1.0;
+    let successRate = 0;
+    let attempts = 0;
+    let perfectMatches = 0;
+    let bestScore = 0;
+    let recordingActive = false;
+    let echoDelay = 0.5;
+    let echoIntensity = 50;
+
+    function decreaseSpeed() {
+        speedMultiplier = Math.max(0.5, speedMultiplier - 0.1);
+        updateSpeedDisplay();
+    }
+
+    function increaseSpeed() {
+        speedMultiplier = Math.min(2.0, speedMultiplier + 0.1);
+        updateSpeedDisplay();
+    }
+
+    function updateSpeedDisplay() {
+        document.getElementById('current-speed').textContent = speedMultiplier.toFixed(1) + 'x';
+        document.getElementById('speed-multiplier').textContent = speedMultiplier.toFixed(1) + 'x';
+        
+        // Update echo audio playback rate
+        const echoAudio = document.getElementById('echo-audio');
+        if (echoAudio && echoAudio.src) {
+            echoAudio.playbackRate = speedMultiplier;
+        }
+    }
+
+    function updateEchoDelay(delay) {
+        echoDelay = parseFloat(delay);
+        document.getElementById('echo-delay').textContent = echoDelay.toFixed(1) + 's';
+    }
+
+    function updateEchoIntensity(intensity) {
+        echoIntensity = parseInt(intensity);
+        const intensityText = intensity < 25 ? 'Low' : intensity < 75 ? 'Medium' : 'High';
+        document.getElementById('echo-intensity').textContent = intensityText;
+    }
+
+    function startEchoRecording() {
+        if (recordingActive) return;
+        
+        recordingActive = true;
+        document.getElementById('record-btn').textContent = 'Recording...';
+        document.getElementById('record-btn').disabled = true;
+        document.getElementById('recording-status').textContent = 'Recording your speech for echo...';
+        
+        drillComponents.startMic({
+            onStart: function() {
+                console.log('Echo recording started');
+            },
+            onStop: function(audioBlob, audioUrl) {
+                recordingActive = false;
+                document.getElementById('record-btn').textContent = '🎤 Start Echo Recording';
+                document.getElementById('record-btn').disabled = false;
+                document.getElementById('recording-status').textContent = 'Recording complete! Echo ready.';
+                
+                // Show audio players
+                const audioPlayers = document.getElementById('audio-players');
+                const originalAudio = document.getElementById('original-audio');
+                const echoAudio = document.getElementById('echo-audio');
+                
+                originalAudio.src = audioUrl;
+                echoAudio.src = audioUrl; // In a real implementation, this would be processed
+                echoAudio.playbackRate = speedMultiplier;
+                
+                audioPlayers.classList.remove('hidden');
+                
+                // Show feedback buttons
+                drillComponents.showFeedback('feedback-buttons', function(rating) {
+                    console.log('Echo chamber feedback:', rating);
+                });
+            },
+            onError: function(error) {
+                alert('Error accessing microphone: ' + error.message);
+                recordingActive = false;
+                document.getElementById('record-btn').textContent = '🎤 Start Echo Recording';
+                document.getElementById('record-btn').disabled = false;
+            }
+        });
+    }
+
+    function playOriginal() {
+        const audio = document.getElementById('original-audio');
+        if (audio && audio.src) {
+            audio.play();
+        }
+    }
+
+    function playEcho() {
+        const audio = document.getElementById('echo-audio');
+        if (audio && audio.src) {
+            audio.play();
+        }
+    }
+
+    function startMatching() {
+        attempts++;
+        document.getElementById('attempts').textContent = attempts;
+        
+        // Simulate matching analysis
+        const speedAccuracy = Math.max(0, 100 - Math.random() * 30); // 70-100%
+        const timingMatch = Math.max(0, 100 - Math.random() * 25); // 75-100%
+        const overallScore = Math.round((speedAccuracy + timingMatch) / 2);
+        
+        // Update displays
+        document.getElementById('speed-accuracy').textContent = Math.round(speedAccuracy) + '%';
+        document.getElementById('timing-match').textContent = Math.round(timingMatch) + '%';
+        document.getElementById('overall-score').textContent = overallScore;
+        
+        // Show feedback
+        const feedback = document.getElementById('matching-feedback');
+        feedback.classList.remove('hidden');
+        
+        // Update best score
+        if (overallScore > bestScore) {
+            bestScore = overallScore;
+            document.getElementById('best-score').textContent = bestScore;
+        }
+        
+        // Check for perfect match
+        if (overallScore >= 90) {
+            perfectMatches++;
+            document.getElementById('perfect-matches').textContent = perfectMatches;
+        }
+        
+        // Update success rate
+        successRate = Math.round((perfectMatches / attempts) * 100);
+        document.getElementById('success-rate').textContent = successRate + '%';
+        
+        // Check level progression
+        checkLevelProgression(overallScore);
+    }
+
+    function checkLevelProgression(score) {
+        const levelRequirements = [20, 15, 10]; // Accuracy requirements for each level
+        const currentRequirement = levelRequirements[currentLevel - 1] || 10;
+        
+        if (score >= (100 - currentRequirement)) {
+            // Level up!
+            currentLevel++;
+            document.getElementById('current-level').textContent = currentLevel;
+            document.getElementById('escalation-level').textContent = currentLevel;
+            
+            // Increase difficulty
+            speedMultiplier = Math.min(2.0, speedMultiplier + 0.2);
+            updateSpeedDisplay();
+            
+            // Update progress
+            updateLevelProgress();
+            
+            // Show level up message
+            showLevelUpMessage();
+        }
+    }
+
+    function updateLevelProgress() {
+        const progress = Math.min((currentLevel - 1) / 3 * 100, 100);
+        document.getElementById('level-progress-bar').style.width = progress + '%';
+        document.getElementById('level-progress').textContent = `${currentLevel - 1}/3`;
+    }
+
+    function showLevelUpMessage() {
+        const message = document.createElement('div');
+        message.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+        message.textContent = `🎉 Level ${currentLevel} Unlocked!`;
+        
+        document.body.appendChild(message);
+        
+        setTimeout(() => {
+            message.remove();
+        }, 3000);
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        updateSpeedDisplay();
+        updateEchoDelay(0.5);
+        updateEchoIntensity(50);
+        updateLevelProgress();
+    });
+</script>
+{% endblock %}

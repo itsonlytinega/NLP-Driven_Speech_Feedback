@@ -67,7 +67,7 @@ ROOT_URLCONF = 'verbalcoach.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -149,6 +149,32 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# Ensure temp_audio directory exists for Sprint 3
+TEMP_AUDIO_DIR = MEDIA_ROOT / 'temp_audio'
+os.makedirs(TEMP_AUDIO_DIR, exist_ok=True)
+
+# Caching (Redis preferred, fallback to local memory)
+REDIS_URL = os.getenv('REDIS_URL')
+if REDIS_URL:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': REDIS_URL,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
+            },
+            'TIMEOUT': None,
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'verbalcoach-local',
+        }
+    }
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
@@ -171,6 +197,9 @@ SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
 # Email verification settings
 EMAIL_VERIFICATION_TIMEOUT = 3600  # 1 hour in seconds
+
+# Base URL for email links
+BASE_URL = os.getenv('BASE_URL', 'http://192.168.100.89:8000')
 
 # 2FA Settings
 OTP_TOTP_ISSUER = 'Verbal Coach'
@@ -197,4 +226,18 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
     ],
 }
+
+# Celery configuration (Redis broker by default, in-memory fallback)
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL') or REDIS_URL or 'memory://'
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND') or REDIS_URL or 'cache+memory://'
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = int(os.getenv('CELERY_TASK_TIME_LIMIT', '600'))
+CELERY_TASK_ACKS_LATE = True
+CELERY_RESULT_EXTENDED = True
+
+# Speech pipeline configuration
+WHISPER_MODEL_NAME = os.getenv('WHISPER_MODEL_NAME', 'base')
+WHISPER_LANGUAGE = os.getenv('WHISPER_LANGUAGE', 'en')
+SPEECH_TRANSCRIPT_CACHE_TIMEOUT = int(os.getenv('SPEECH_TRANSCRIPT_CACHE_TIMEOUT', str(60 * 60 * 24 * 30)))
+SPEECH_ANALYSIS_CACHE_TIMEOUT = int(os.getenv('SPEECH_ANALYSIS_CACHE_TIMEOUT', str(60 * 60 * 24 * 7)))
 

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User, Feedback, Drill, EmailOTP
+from .models import User, Feedback, Drill, DrillCompletion, EmailOTP, WebAuthnCredential
 
 
 @admin.register(User)
@@ -36,10 +36,28 @@ class FeedbackAdmin(admin.ModelAdmin):
 
 @admin.register(Drill)
 class DrillAdmin(admin.ModelAdmin):
-    list_display = ('type', 'instruction', 'is_active', 'created_at')
-    list_filter = ('type', 'is_active', 'created_at')
-    search_fields = ('type', 'instruction')
-    ordering = ('-created_at',)
+    list_display = ('name', 'skill_type', 'cause', 'is_active', 'created_at')
+    list_filter = ('skill_type', 'cause', 'is_active', 'created_at')
+    search_fields = ('name', 'description', 'skill_type')
+    ordering = ('skill_type', 'name')
+    fieldsets = (
+        ('Basic Info', {
+            'fields': ('name', 'skill_type', 'cause', 'description', 'is_active')
+        }),
+        ('Interactive Elements', {
+            'fields': ('interactive_elements',),
+            'classes': ('collapse',)
+        }),
+    )
+
+
+@admin.register(DrillCompletion)
+class DrillCompletionAdmin(admin.ModelAdmin):
+    list_display = ('user', 'drill', 'score', 'duration_seconds', 'completed_at')
+    list_filter = ('drill__skill_type', 'completed_at', 'score')
+    search_fields = ('user__email', 'drill__name', 'notes')
+    ordering = ('-completed_at',)
+    readonly_fields = ('completed_at',)
 
 
 @admin.register(EmailOTP)
@@ -54,4 +72,29 @@ class EmailOTPAdmin(admin.ModelAdmin):
         return obj.is_expired()
     is_expired.boolean = True
     is_expired.short_description = 'Expired'
+
+
+@admin.register(WebAuthnCredential)
+class WebAuthnCredentialAdmin(admin.ModelAdmin):
+    list_display = ('name', 'user', 'device_type', 'is_active', 'last_used', 'created_at')
+    list_filter = ('is_active', 'device_type', 'created_at', 'last_used')
+    search_fields = ('user__email', 'name', 'credential_id')
+    ordering = ('-created_at',)
+    readonly_fields = ('credential_id', 'public_key', 'sign_count', 'created_at', 'updated_at', 'last_used')
+    
+    fieldsets = (
+        ('Credential Info', {
+            'fields': ('user', 'name', 'credential_id', 'is_active')
+        }),
+        ('Technical Details', {
+            'fields': ('public_key', 'sign_count', 'credential_type', 'aaguid', 'transports'),
+            'classes': ('collapse',)
+        }),
+        ('Device Info', {
+            'fields': ('device_type', 'backup_eligible', 'backup_state')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at', 'last_used')
+        }),
+    )
 

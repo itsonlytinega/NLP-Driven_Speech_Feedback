@@ -1,0 +1,277 @@
+{% extends 'coach/drill_unified_base.html' %}
+{% load static %}
+
+{% block drill_content %}
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="text-center">
+        <h2 class="text-3xl font-bold text-gray-800 mb-4">Slow-Motion Story Slam</h2>
+        <p class="text-lg text-gray-600 mb-6">Practice speaking at half-speed with adjustable playback and plot twists!</p>
+    </div>
+
+    <!-- Story Display -->
+    <div class="bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Your Story</h3>
+        <div class="bg-white rounded-lg p-6 mb-6">
+            <h4 class="text-lg font-bold text-purple-800 mb-3">{{ selected_story.title }}</h4>
+            <p class="text-gray-700 text-lg leading-relaxed mb-4">{{ selected_story.story }}</p>
+            
+            <!-- Plot Twist Button -->
+            <div class="text-center">
+                <button onclick="addPlotTwist()" 
+                        class="px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold transition-colors">
+                    🎭 Add Plot Twist!
+                </button>
+            </div>
+        </div>
+        
+        <!-- Plot Twists Display -->
+        <div id="plot-twists" class="hidden bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
+            <h4 class="font-semibold text-yellow-800 mb-2">Plot Twists Added:</h4>
+            <div id="twist-list" class="space-y-2"></div>
+        </div>
+    </div>
+
+    <!-- Speed Controls -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Playback Speed Control</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Speed Slider -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Playback Speed</label>
+                <div class="flex items-center space-x-4">
+                    <span class="text-sm text-gray-500">0.5x</span>
+                    <input type="range" id="speed-slider" min="0.5" max="1.5" step="0.25" value="0.5" 
+                           class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                           oninput="updateSpeed(this.value)">
+                    <span class="text-sm text-gray-500">1.5x</span>
+                </div>
+                <div class="text-center mt-2">
+                    <span id="current-speed" class="text-2xl font-bold text-blue-600">0.5x</span>
+                </div>
+            </div>
+            
+            <!-- Speed Presets -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Quick Speed Selection</label>
+                <div class="grid grid-cols-2 gap-2">
+                    {% for speed in playback_speeds %}
+                    <button onclick="setSpeed({{ speed }})" 
+                            class="speed-preset px-3 py-2 border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors {% if speed == 0.5 %}bg-blue-100 border-blue-300{% endif %}">
+                        {{ speed }}x
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recording Controls -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Story Recording</h3>
+        <div class="text-center">
+            <button id="record-btn" onclick="startRecording()" 
+                    class="px-8 py-4 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold text-lg transition-colors">
+                🎬 Start Slow-Motion Recording
+            </button>
+            <div id="recording-status" class="mt-4 text-lg font-semibold text-gray-600">Ready to tell your story!</div>
+        </div>
+        
+        <!-- Audio Player -->
+        <div id="audio-player" class="mt-6 hidden">
+            <audio controls class="w-full" id="story-audio">
+                <source src="" type="audio/wav">
+            </audio>
+        </div>
+    </div>
+
+    <!-- Story Enhancement -->
+    <div class="bg-gradient-to-r from-green-100 to-blue-100 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Story Enhancement</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Plot Twists</div>
+                <div id="twist-count" class="text-3xl font-bold text-purple-600">0</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Recording Speed</div>
+                <div id="recording-speed" class="text-3xl font-bold text-blue-600">0.5x</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Story Score</div>
+                <div id="story-score" class="text-3xl font-bold text-green-600">0</div>
+            </div>
+        </div>
+        
+        <!-- Story Tips -->
+        <div class="mt-6 bg-white rounded-lg p-4">
+            <h4 class="font-semibold text-gray-700 mb-2">Slow-Motion Tips:</h4>
+            <ul class="text-sm text-gray-600 space-y-1">
+                <li>• Speak at half your normal speed for better articulation</li>
+                <li>• Use plot twists to practice improvisation</li>
+                <li>• Focus on clear pronunciation of each word</li>
+                <li>• Maintain steady pacing throughout the story</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Feedback -->
+    <div id="feedback-container" class="bg-gray-50 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Story Feedback</h3>
+        <div id="feedback-buttons"></div>
+    </div>
+</div>
+
+<script>
+// Drill-specific JavaScript
+function getDrillSpecificParams() {
+    // Override this function in individual drill templates if needed
+    return {};
+}
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/drills.js' %}"></script>
+<script>
+    let recordingActive = false;
+    let plotTwists = [];
+    let currentSpeed = 0.5;
+    let storyScore = 0;
+
+    const story = {{ selected_story|safe }};
+    const availableTwists = {{ selected_story.plot_twists|safe }};
+
+    function addPlotTwist() {
+        if (availableTwists.length === 0) return;
+        
+        const randomTwist = availableTwists[Math.floor(Math.random() * availableTwists.length)];
+        plotTwists.push(randomTwist);
+        
+        // Remove used twist from available list
+        const index = availableTwists.indexOf(randomTwist);
+        if (index > -1) {
+            availableTwists.splice(index, 1);
+        }
+        
+        updatePlotTwistsDisplay();
+        updateStoryScore();
+        
+        // Visual feedback
+        event.target.classList.add('animate-pulse');
+        setTimeout(() => {
+            event.target.classList.remove('animate-pulse');
+        }, 500);
+    }
+
+    function updatePlotTwistsDisplay() {
+        const container = document.getElementById('plot-twists');
+        const list = document.getElementById('twist-list');
+        const count = document.getElementById('twist-count');
+        
+        if (plotTwists.length > 0) {
+            container.classList.remove('hidden');
+            list.innerHTML = plotTwists.map((twist, index) => `
+                <div class="flex items-center justify-between bg-yellow-100 p-2 rounded">
+                    <span class="text-yellow-800">${index + 1}. ${twist}</span>
+                    <button onclick="removeTwist(${index})" class="text-red-600 hover:text-red-800 text-sm">Remove</button>
+                </div>
+            `).join('');
+        } else {
+            container.classList.add('hidden');
+        }
+        
+        count.textContent = plotTwists.length;
+    }
+
+    function removeTwist(index) {
+        plotTwists.splice(index, 1);
+        updatePlotTwistsDisplay();
+        updateStoryScore();
+    }
+
+    function updateSpeed(speed) {
+        currentSpeed = parseFloat(speed);
+        document.getElementById('current-speed').textContent = currentSpeed + 'x';
+        document.getElementById('recording-speed').textContent = currentSpeed + 'x';
+        
+        // Update audio playback rate if audio exists
+        const audio = document.getElementById('story-audio');
+        if (audio && audio.src) {
+            audio.playbackRate = currentSpeed;
+        }
+        
+        // Update preset button styles
+        document.querySelectorAll('.speed-preset').forEach(btn => {
+            btn.classList.remove('bg-blue-100', 'border-blue-300');
+        });
+        
+        const presetBtn = document.querySelector(`[onclick="setSpeed(${currentSpeed})"]`);
+        if (presetBtn) {
+            presetBtn.classList.add('bg-blue-100', 'border-blue-300');
+        }
+    }
+
+    function setSpeed(speed) {
+        document.getElementById('speed-slider').value = speed;
+        updateSpeed(speed);
+    }
+
+    function updateStoryScore() {
+        // Score based on plot twists and speed control
+        let score = 0;
+        score += plotTwists.length * 10; // 10 points per plot twist
+        score += Math.abs(currentSpeed - 0.5) * 20; // Bonus for speed control
+        
+        storyScore = Math.min(score, 100); // Cap at 100
+        document.getElementById('story-score').textContent = storyScore;
+    }
+
+    function startRecording() {
+        if (recordingActive) return;
+        
+        recordingActive = true;
+        document.getElementById('record-btn').textContent = 'Recording...';
+        document.getElementById('record-btn').disabled = true;
+        document.getElementById('recording-status').textContent = 'Recording your slow-motion story...';
+        
+        drillComponents.startMic({
+            onStart: function() {
+                console.log('Slow-motion story recording started');
+            },
+            onStop: function(audioBlob, audioUrl) {
+                recordingActive = false;
+                document.getElementById('record-btn').textContent = '🎬 Start Slow-Motion Recording';
+                document.getElementById('record-btn').disabled = false;
+                document.getElementById('recording-status').textContent = 'Recording complete!';
+                
+                // Show audio playback with speed control
+                const audioPlayer = document.getElementById('audio-player');
+                const audio = document.getElementById('story-audio');
+                audio.src = audioUrl;
+                audio.playbackRate = currentSpeed;
+                audioPlayer.classList.remove('hidden');
+                
+                // Show feedback buttons
+                drillComponents.showFeedback('feedback-buttons', function(rating) {
+                    console.log('Story feedback:', rating);
+                });
+            },
+            onError: function(error) {
+                alert('Error accessing microphone: ' + error.message);
+                recordingActive = false;
+                document.getElementById('record-btn').textContent = '🎬 Start Slow-Motion Recording';
+                document.getElementById('record-btn').disabled = false;
+            }
+        });
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        updatePlotTwistsDisplay();
+        updateStoryScore();
+    });
+</script>
+{% endblock %}

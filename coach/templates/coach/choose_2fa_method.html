@@ -65,6 +65,27 @@
                             </div>
                         </label>
                     </div>
+                    
+                    {% if user.has_passkey %}
+                    <div class="relative">
+                        <input type="radio" id="passkey" name="method" value="passkey" class="sr-only" required>
+                        <label for="passkey" class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-fingerprint text-2xl text-purple-600 mr-3"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <div class="text-sm font-medium text-gray-900">
+                                        Use Passkey (Fingerprint/Face ID)
+                                    </div>
+                                    <div class="text-sm text-gray-500">
+                                        Authenticate with your device's biometric sensor
+                                    </div>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                    {% endif %}
                 </div>
                 
                 <div>
@@ -105,7 +126,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const radioButtons = document.querySelectorAll('input[name="method"]');
-    const labels = document.querySelectorAll('label[for="totp"], label[for="email"]');
+    const labels = document.querySelectorAll('label[for="totp"], label[for="email"], label[for="passkey"]');
     
     radioButtons.forEach(radio => {
         radio.addEventListener('change', function() {

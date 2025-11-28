@@ -1,0 +1,509 @@
+{% extends 'coach/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+        min-height: 100vh;
+        color: #fff;
+        overflow-x: hidden;
+    }
+    
+    .drill-container {
+        background: transparent;
+        min-height: 100vh;
+        padding: 2rem;
+    }
+    
+    .hero-section {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding: 2rem;
+    }
+    
+    .hero-title {
+        font-size: 4.5rem;
+        font-weight: 900;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 50%, #4facfe 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: 0 0 40px rgba(255, 0, 150, 0.5);
+        margin-bottom: 1rem;
+        animation: glow 3s ease-in-out infinite alternate;
+    }
+    
+    @keyframes glow {
+        from { filter: drop-shadow(0 0 20px rgba(255, 0, 150, 0.5)); }
+        to { filter: drop-shadow(0 0 40px rgba(0, 255, 255, 0.8)); }
+    }
+    
+    .hero-tagline {
+        font-size: 1.5rem;
+        color: rgba(255, 255, 255, 0.8);
+        margin-bottom: 2rem;
+    }
+    
+    .live-feedback-panel {
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(20px);
+        border: 2px solid rgba(255, 0, 255, 0.3);
+        border-radius: 2rem;
+        padding: 2rem;
+        margin-bottom: 3rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5),
+                    0 0 60px rgba(255, 0, 255, 0.2);
+    }
+    
+    .feedback-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 2rem;
+        text-align: center;
+    }
+    
+    .feedback-stat {
+        padding: 1.5rem;
+    }
+    
+    .stat-value {
+        font-size: 3.5rem;
+        font-weight: 900;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.6);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .filler-count { color: #ff0080; text-shadow: 0 0 20px rgba(255, 0, 128, 0.8); }
+    .wpm-count { color: #00ffff; text-shadow: 0 0 20px rgba(0, 255, 255, 0.8); }
+    .silence-count { color: #00ff88; text-shadow: 0 0 20px rgba(0, 255, 136, 0.8); }
+    
+    .record-button-container {
+        text-align: center;
+        margin: 3rem 0;
+    }
+    
+    .record-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 50px;
+        padding: 1.5rem 4rem;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4),
+                    0 0 60px rgba(118, 75, 162, 0.3);
+        position: relative;
+        overflow: hidden;
+        min-width: 300px;
+        z-index: 10;
+    }
+    
+    .record-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 15px 50px rgba(102, 126, 234, 0.6),
+                    0 0 80px rgba(118, 75, 162, 0.5);
+    }
+    
+    .record-btn:active {
+        transform: scale(0.95);
+    }
+    
+    .record-btn.recording {
+        background: linear-gradient(135deg, #ff0080 0%, #ff4444 100%);
+        animation: pulse-glow 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes pulse-glow {
+        0%, 100% { box-shadow: 0 10px 40px rgba(255, 0, 128, 0.4), 0 0 60px rgba(255, 0, 128, 0.3); }
+        50% { box-shadow: 0 15px 60px rgba(255, 0, 128, 0.8), 0 0 100px rgba(255, 0, 128, 0.6); }
+    }
+    
+    .timer-display {
+        font-size: 3rem;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.9);
+        margin-top: 1rem;
+        font-family: 'Courier New', monospace;
+        text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    }
+    
+    .drill-card {
+        background: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 1.5rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .practice-arena {
+        background: linear-gradient(135deg, rgba(79, 172, 254, 0.2) 0%, rgba(0, 242, 254, 0.2) 100%);
+        border: 2px solid rgba(79, 172, 254, 0.4);
+        border-radius: 1.5rem;
+        padding: 3rem;
+        margin: 2rem 0;
+        min-height: 400px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .idle-state {
+        text-align: center;
+    }
+    
+    .idle-icon {
+        font-size: 5rem;
+        margin-bottom: 1rem;
+        opacity: 0.7;
+    }
+    
+    .recording-state {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .waveform-canvas {
+        width: 100%;
+        height: 150px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 1rem;
+        margin: 1rem 0;
+    }
+    
+    .filler-flash {
+        animation: flash-red 0.3s ease;
+    }
+    
+    @keyframes flash-red {
+        0%, 100% { background: transparent; }
+        50% { background: rgba(255, 0, 0, 0.3); }
+    }
+    
+    @media (max-width: 768px) {
+        .hero-title { font-size: 2.5rem; }
+        .hero-tagline { font-size: 1.2rem; }
+        .record-btn { padding: 1.2rem 3rem; font-size: 1.4rem; min-width: 250px; }
+        .stat-value { font-size: 2.5rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="drill-container">
+    <div class="max-w-6xl mx-auto">
+        <!-- HERO SECTION -->
+        <div class="hero-section">
+            <h1 class="hero-title">{{ drill.name }}</h1>
+            <p class="hero-tagline">{{ drill.description }}</p>
+            <div class="flex justify-center gap-3 mt-4">
+                <span class="px-4 py-2 bg-gradient-to-r from-pink-500/30 to-purple-500/30 rounded-full text-sm font-semibold border border-pink-500/50">
+                    {{ drill.get_skill_type_display }}
+                </span>
+                {% if drill.cause %}
+                <span class="px-4 py-2 bg-gradient-to-r from-cyan-500/30 to-blue-500/30 rounded-full text-sm font-semibold border border-cyan-500/50">
+                    {{ drill.get_cause_display }}
+                </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- LIVE FEEDBACK PANEL -->
+        <div id="live-feedback" class="live-feedback-panel hidden">
+            <div class="feedback-grid">
+                <div class="feedback-stat">
+                    <div id="filler-count" class="stat-value filler-count">0</div>
+                    <div class="stat-label">Fillers</div>
+                </div>
+                <div class="feedback-stat">
+                    <div id="wpm" class="stat-value wpm-count">0</div>
+                    <div class="stat-label">Words/Min</div>
+                </div>
+                <div class="feedback-stat">
+                    <div id="silence" class="stat-value silence-count">0s</div>
+                    <div class="stat-label">Silence</div>
+                </div>
+                <div class="feedback-stat">
+                    <div id="score" class="stat-value" style="color: #ffd700;">0</div>
+                    <div class="stat-label">Score</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RECORD BUTTON -->
+        <div class="record-button-container">
+            <button id="record-btn" type="button" class="record-btn">
+                🎤 Start Recording
+            </button>
+            <div id="timer-display" class="timer-display">00:00</div>
+        </div>
+
+        <!-- MAIN DRILL CONTENT -->
+        <div class="drill-card">
+            {% block drill_content %}
+            <!-- Drill-specific content goes here -->
+            <div class="practice-arena">
+                <div id="idle-state" class="idle-state">
+                    <div class="idle-icon">🎯</div>
+                    <p class="text-2xl font-semibold mb-4">Ready to Practice!</p>
+                    <p class="text-gray-400 mb-6">Click "Start Recording" above to begin</p>
+                    {% if drill.interactive_elements.prompts %}
+                    <div class="mt-6 text-left max-w-2xl mx-auto">
+                        <h3 class="text-xl font-bold mb-4 text-cyan-400">📋 Instructions</h3>
+                        <ol class="space-y-2 text-gray-300">
+                            {% for prompt in drill.interactive_elements.prompts %}
+                            <li class="flex items-start">
+                                <span class="text-pink-400 mr-2 font-bold">{{ forloop.counter }}.</span>
+                                <span>{{ prompt }}</span>
+                            </li>
+                            {% endfor %}
+                        </ol>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div id="recording-state" class="recording-state hidden">
+                    <div class="mb-6">
+                        <div class="inline-block w-20 h-20 bg-red-500 rounded-full animate-pulse flex items-center justify-center shadow-lg shadow-red-500/50">
+                            <span class="text-white text-3xl">🎤</span>
+                        </div>
+                    </div>
+                    <p class="text-3xl font-bold text-red-400 mb-6 animate-pulse">🔴 Recording...</p>
+                    <canvas id="waveform-canvas" class="waveform-canvas"></canvas>
+                </div>
+                
+                <div id="playback-state" class="hidden text-center">
+                    <div class="mb-6">
+                        <span class="text-5xl">🎉</span>
+                    </div>
+                    <p class="text-2xl font-bold mb-4">Review Your Practice</p>
+                    <audio id="practice-audio" controls class="w-full mb-6"></audio>
+                    <div id="practice-analysis" class="bg-black/30 rounded-xl p-6 mt-4">
+                        <h4 class="text-xl font-bold mb-4 text-cyan-400">Practice Analysis</h4>
+                        <div id="analysis-results" class="text-gray-300"></div>
+                    </div>
+                </div>
+            </div>
+            
+<script>
+// Drill-specific JavaScript
+function getDrillSpecificParams() {
+    // Override this function in individual drill templates if needed
+    return {};
+}
+</script>
+{% endblock %}
+        </div>
+    </div>
+</div>
+
+<!-- Audio for sound effects -->
+<audio id="ding-sound" src="{% static 'drills/ding.mp3' %}" preload="auto"></audio>
+<audio id="success-sound" src="{% static 'drills/success.mp3' %}" preload="auto"></audio>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/drills.js' %}"></script>
+<script>
+    let recording = false;
+    let startTime = null;
+    let timerInterval = null;
+    let statsInterval = null;
+    let fillerCount = 0;
+    let wordCount = 0;
+    let silenceTime = 0;
+    
+    const recordBtn = document.getElementById('record-btn');
+    const btnText = recordBtn.querySelector('span') || recordBtn;
+    const timerDisplay = document.getElementById('timer-display');
+    const liveFeedback = document.getElementById('live-feedback');
+    const idleState = document.getElementById('idle-state');
+    const recordingState = document.getElementById('recording-state');
+    const playbackState = document.getElementById('playback-state');
+    
+    // Confetti function
+    function triggerConfetti() {
+        confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 }
+        });
+    }
+    
+    // Play sound
+    function playSound(soundId) {
+        const sound = document.getElementById(soundId);
+        if (sound) {
+            sound.currentTime = 0;
+            sound.play().catch(e => console.log('Sound play blocked:', e));
+        }
+    }
+    
+    // Filler flash effect
+    function flashFiller() {
+        document.body.classList.add('filler-flash');
+        setTimeout(() => document.body.classList.remove('filler-flash'), 300);
+    }
+    
+    // Initialize drill components
+    if (typeof DrillComponents !== 'undefined' || window.drillComponents) {
+        if (typeof DrillComponents !== 'undefined') {
+            window.drillComponents = new DrillComponents();
+        }
+        
+        recordBtn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            
+            if (!recording) {
+                // Start recording
+                try {
+                    await window.drillComponents.startMic({
+                        onStart: function() {
+                            recording = true;
+                            startTime = Date.now();
+                            fillerCount = 0;
+                            wordCount = 0;
+                            silenceTime = 0;
+                            
+                            recordBtn.classList.add('recording');
+                            recordBtn.innerHTML = '<span>🛑 Stop Recording</span>';
+                            
+                            idleState.classList.add('hidden');
+                            recordingState.classList.remove('hidden');
+                            liveFeedback.classList.remove('hidden');
+                            
+                            // Start timer
+                            timerInterval = setInterval(() => {
+                                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                                const mins = Math.floor(elapsed / 60);
+                                const secs = elapsed % 60;
+                                timerDisplay.textContent = 
+                                    `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+                            }, 100);
+                            
+                            // Update stats
+                            statsInterval = setInterval(() => {
+                                // Simulate filler detection (replace with real detection)
+                                if (Math.random() < 0.001) {
+                                    fillerCount++;
+                                    flashFiller();
+                                }
+                                
+                                // Calculate WPM (simulated)
+                                wordCount += Math.floor(Math.random() * 3);
+                                const elapsed = (Date.now() - startTime) / 1000 / 60;
+                                const wpm = Math.floor(wordCount / elapsed) || 0;
+                                
+                                // Update UI
+                                document.getElementById('filler-count').textContent = fillerCount;
+                                document.getElementById('wpm').textContent = wpm;
+                                document.getElementById('silence').textContent = 
+                                    Math.floor(silenceTime) + 's';
+                            }, 100);
+                        },
+                        onStop: function(audioBlob, audioUrl) {
+                            recording = false;
+                            
+                            recordBtn.classList.remove('recording');
+                            recordBtn.innerHTML = '<span>🎤 Start Recording</span>';
+                            
+                            if (timerInterval) clearInterval(timerInterval);
+                            if (statsInterval) clearInterval(statsInterval);
+                            
+                            recordingState.classList.add('hidden');
+                            playbackState.classList.remove('hidden');
+                            
+                            const audio = document.getElementById('practice-audio');
+                            audio.src = audioUrl;
+                            
+                            // Calculate final score
+                            const elapsed = (Date.now() - startTime) / 1000;
+                            const finalScore = Math.max(0, Math.min(100, 
+                                100 - (fillerCount * 10) + (wordCount / elapsed * 60 / 10)
+                            ));
+                            document.getElementById('score').textContent = Math.floor(finalScore);
+                            
+                            // Show analysis
+                            const analysisResults = document.getElementById('analysis-results');
+                            analysisResults.innerHTML = `
+                                <p class="mb-2"><strong>Duration:</strong> ${Math.floor(elapsed)}s</p>
+                                <p class="mb-2"><strong>Fillers Detected:</strong> ${fillerCount}</p>
+                                <p class="mb-2"><strong>Words Per Minute:</strong> ${Math.floor(wordCount / elapsed * 60)}</p>
+                                <p class="mb-2"><strong>Score:</strong> ${Math.floor(finalScore)}/100</p>
+                            `;
+                            
+                            // Success effects
+                            if (finalScore >= 80) {
+                                triggerConfetti();
+                                playSound('success-sound');
+                                setTimeout(() => {
+                                    alert('🌟 Excellent work! Keep practicing!');
+                                }, 500);
+                            } else if (finalScore >= 60) {
+                                playSound('ding-sound');
+                                setTimeout(() => {
+                                    alert('👍 Good job! You\'re improving!');
+                                }, 500);
+                            }
+                        },
+                        onError: function(error) {
+                            alert('Error accessing microphone: ' + error.message);
+                            recording = false;
+                            recordBtn.classList.remove('recording');
+                        }
+                    });
+                } catch (error) {
+                    alert('Error: ' + error.message);
+                    recording = false;
+                }
+            } else {
+                // Stop recording
+                window.drillComponents.stopMic();
+            }
+        });
+    } else {
+        console.error('DrillComponents not available');
+        recordBtn.addEventListener('click', () => {
+            alert('Recording components not loaded. Please refresh the page.');
+        });
+    }
+    
+    // Live filler detection (simulated - replace with real detection)
+    document.addEventListener('keydown', function(e) {
+        if (recording) {
+            const words = ['um', 'uh', 'like', 'you know', 'so'];
+            const text = e.key;
+            // This is a placeholder - replace with actual speech-to-text
+        }
+    });
+</script>
+{% endblock %}
+
+
+
+
+
+
+
+
+

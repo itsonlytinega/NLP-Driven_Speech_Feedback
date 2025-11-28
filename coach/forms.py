@@ -105,6 +105,7 @@ class TwoFactorChoiceForm(forms.Form):
     METHOD_CHOICES = [
         ('totp', 'Use Authenticator App (TOTP)'),
         ('email', 'Send OTP to Email'),
+        ('passkey', 'Use Passkey (Fingerprint/Face ID)'),
     ]
     
     method = forms.ChoiceField(

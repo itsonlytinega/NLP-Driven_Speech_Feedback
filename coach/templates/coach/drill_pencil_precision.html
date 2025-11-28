@@ -1,0 +1,244 @@
+{% extends 'coach/drill_unified_base.html' %}
+
+{% block drill_content %}
+<div class="text-center">
+    <h2 class="text-3xl font-bold text-gray-800 mb-8">Pencil Precision Drill</h2>
+    
+    <!-- Demo Image -->
+    <div class="mb-8">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Demo: Pencil in Teeth Technique</h3>
+        <div class="bg-gray-100 rounded-lg p-8 mb-4">
+            <div class="text-6xl mb-4">✏️</div>
+            <div class="text-lg text-gray-600 mb-4">
+                <p>Hold a pencil horizontally between your teeth</p>
+                <p class="text-sm text-gray-500 mt-2">This forces you to articulate more clearly!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Precision Text -->
+    <div class="bg-gradient-to-r from-yellow-50 to-orange-50 p-8 rounded-xl mb-8">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Precision Text</h3>
+        <div class="text-2xl font-medium text-gray-800 leading-relaxed mb-6" id="precision-text">
+            "{{ selected_text }}"
+        </div>
+        <div class="bg-yellow-100 p-4 rounded-lg">
+            <p class="text-yellow-800 font-medium">Say this text clearly with and without the pencil!</p>
+        </div>
+    </div>
+
+    <!-- Comparison Test -->
+    <div class="mb-8">
+        <h3 class="text-xl font-semibold text-gray-700 mb-6">Clarity Comparison Test</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Without Pencil -->
+            <div class="bg-blue-50 p-6 rounded-lg">
+                <h4 class="text-lg font-semibold text-blue-800 mb-4">Without Pencil</h4>
+                <div class="mb-4">
+                    <button id="record-without" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors">
+                        🎤 Record Without Pencil
+                    </button>
+                </div>
+                <div id="audio-without" class="bg-white p-4 rounded-lg border-2 border-dashed border-gray-300 min-h-20 flex items-center justify-center">
+                    <span class="text-gray-500">Click to record</span>
+                </div>
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Clarity Score (1-10):</label>
+                    <input type="number" id="score-without" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Rate clarity">
+                </div>
+            </div>
+
+            <!-- With Pencil -->
+            <div class="bg-green-50 p-6 rounded-lg">
+                <h4 class="text-lg font-semibold text-green-800 mb-4">With Pencil</h4>
+                <div class="mb-4">
+                    <button id="record-with" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg transition-colors">
+                        🎤 Record With Pencil
+                    </button>
+                </div>
+                <div id="audio-with" class="bg-white p-4 rounded-lg border-2 border-dashed border-gray-300 min-h-20 flex items-center justify-center">
+                    <span class="text-gray-500">Click to record</span>
+                </div>
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Clarity Score (1-10):</label>
+                    <input type="number" id="score-with" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Rate clarity">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div id="results" class="hidden bg-purple-50 p-6 rounded-lg mb-8">
+        <h3 class="text-xl font-semibold text-purple-800 mb-4">Results</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="text-center">
+                <div class="text-2xl font-bold text-blue-600" id="score-without-display">-</div>
+                <div class="text-sm text-gray-600">Without Pencil</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-green-600" id="score-with-display">-</div>
+                <div class="text-sm text-gray-600">With Pencil</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-purple-600" id="improvement-display">-</div>
+                <div class="text-sm text-gray-600">Improvement</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="bg-cyan-50 border-l-4 border-cyan-400 p-6 mb-8">
+        <h3 class="text-lg font-semibold text-cyan-800 mb-4">📋 Instructions</h3>
+        <ol class="text-left text-cyan-700 space-y-2">
+            <li>1. First, record yourself saying the text normally</li>
+            <li>2. Rate your clarity on a scale of 1-10</li>
+            <li>3. Place a pencil horizontally between your teeth</li>
+            <li>4. Record yourself saying the same text again</li>
+            <li>5. Rate your clarity with the pencil</li>
+            <li>6. Compare the improvement!</li>
+        </ol>
+    </div>
+
+    <!-- Tips -->
+    <div class="bg-gray-50 p-6 rounded-lg">
+        <h3 class="text-lg font-semibold text-gray-700 mb-4">💡 Tips for Better Articulation</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h4 class="font-medium text-gray-600 mb-2">Without Pencil:</h4>
+                <ul class="text-sm text-gray-600 space-y-1">
+                    <li>• Speak naturally and comfortably</li>
+                    <li>• Focus on clear pronunciation</li>
+                    <li>• Don't rush your words</li>
+                    <li>• Use normal mouth movements</li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-medium text-gray-600 mb-2">With Pencil:</h4>
+                <ul class="text-sm text-gray-600 space-y-1">
+                    <li>• Keep the pencil horizontal</li>
+                    <li>• Exaggerate mouth movements</li>
+                    <li>• Focus on each syllable</li>
+                    <li>• Don't let the pencil fall out</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let withoutPencilAudio = null;
+let withPencilAudio = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const recordWithoutBtn = document.getElementById('record-without');
+    const recordWithBtn = document.getElementById('record-with');
+    const audioWithoutDiv = document.getElementById('audio-without');
+    const audioWithDiv = document.getElementById('audio-with');
+    const scoreWithoutInput = document.getElementById('score-without');
+    const scoreWithInput = document.getElementById('score-with');
+    
+    // Record without pencil
+    recordWithoutBtn.addEventListener('click', async function() {
+        if (!drillComponents.isRecording) {
+            await drillComponents.startMic({
+                onStart: function() {
+                    recordWithoutBtn.textContent = '🛑 Stop Recording';
+                    recordWithoutBtn.classList.add('recording');
+                    audioWithoutDiv.innerHTML = '<div class="text-red-500 animate-pulse">🔴 Recording...</div>';
+                },
+                onStop: function(audioBlob, audioUrl) {
+                    recordWithoutBtn.textContent = '🎤 Record Without Pencil';
+                    recordWithoutBtn.classList.remove('recording');
+                    withoutPencilAudio = audioUrl;
+                    
+                    audioWithoutDiv.innerHTML = `
+                        <audio controls class="w-full">
+                            <source src="${audioUrl}" type="audio/wav">
+                        </audio>
+                    `;
+                    
+                    checkResults();
+                },
+                onError: function(error) {
+                    alert('Error accessing microphone: ' + error.message);
+                    audioWithoutDiv.innerHTML = '<span class="text-red-500">❌ Recording failed</span>';
+                }
+            });
+        } else {
+            drillComponents.stopMic();
+        }
+    });
+
+    // Record with pencil
+    recordWithBtn.addEventListener('click', async function() {
+        if (!drillComponents.isRecording) {
+            await drillComponents.startMic({
+                onStart: function() {
+                    recordWithBtn.textContent = '🛑 Stop Recording';
+                    recordWithBtn.classList.add('recording');
+                    audioWithDiv.innerHTML = '<div class="text-red-500 animate-pulse">🔴 Recording...</div>';
+                },
+                onStop: function(audioBlob, audioUrl) {
+                    recordWithBtn.textContent = '🎤 Record With Pencil';
+                    recordWithBtn.classList.remove('recording');
+                    withPencilAudio = audioUrl;
+                    
+                    audioWithDiv.innerHTML = `
+                        <audio controls class="w-full">
+                            <source src="${audioUrl}" type="audio/wav">
+                        </audio>
+                    `;
+                    
+                    checkResults();
+                },
+                onError: function(error) {
+                    alert('Error accessing microphone: ' + error.message);
+                    audioWithDiv.innerHTML = '<span class="text-red-500">❌ Recording failed</span>';
+                }
+            });
+        } else {
+            drillComponents.stopMic();
+        }
+    });
+
+    // Update results when scores change
+    scoreWithoutInput.addEventListener('input', checkResults);
+    scoreWithInput.addEventListener('input', checkResults);
+});
+
+function checkResults() {
+    const scoreWithout = document.getElementById('score-without').value;
+    const scoreWith = document.getElementById('score-with').value;
+    const resultsDiv = document.getElementById('results');
+    
+    if (scoreWithout && scoreWith) {
+        const without = parseFloat(scoreWithout);
+        const withPencil = parseFloat(scoreWith);
+        const improvement = withPencil - without;
+        
+        document.getElementById('score-without-display').textContent = without;
+        document.getElementById('score-with-display').textContent = withPencil;
+        document.getElementById('improvement-display').textContent = improvement > 0 ? `+${improvement}` : improvement;
+        
+        resultsDiv.classList.remove('hidden');
+        
+        // Update the main score input
+        document.getElementById('score').value = withPencil;
+        
+        // Show feedback buttons
+        drillComponents.showFeedback('feedback-buttons', function(rating) {
+            currentScore = rating === 'good' ? withPencil : without;
+            document.getElementById('score').value = currentScore;
+        });
+    }
+}
+</script>
+
+<script>
+// Drill-specific JavaScript
+function getDrillSpecificParams() {
+    // Override this function in individual drill templates if needed
+    return {};
+}
+</script>
+{% endblock %}

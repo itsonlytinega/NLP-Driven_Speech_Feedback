@@ -1,0 +1,455 @@
+{% extends 'coach/base.html' %}
+{% load static %}
+
+{% block title %}Reports - Verbal Coach{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header with Stats -->
+    <div class="bg-gradient-to-r from-blue-600 to-purple-600 overflow-hidden shadow rounded-lg text-white">
+        <div class="px-4 py-5 sm:p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold mb-2">Speech Analysis Reports</h1>
+                    <p class="text-blue-100">Comprehensive analytics and progress tracking</p>
+                </div>
+                {% if stats %}
+                <div class="text-right">
+                    <div class="text-3xl font-bold">{{ stats.total_sessions }}</div>
+                    <div class="text-sm text-blue-100">Total Entries</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Comprehensive Charts Section -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl leading-6 font-medium text-gray-900">Comprehensive Analysis & Reports</h3>
+                <div class="flex gap-2">
+                    <a href="{% url 'coach:export_feedback_report' 'pdf' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        <i class="fas fa-file-pdf mr-2"></i>
+                        Export PDF
+                    </a>
+                    <a href="{% url 'coach:export_feedback_report' 'csv' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <i class="fas fa-file-csv mr-2"></i>
+                        Export CSV
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Progress Over Time Chart -->
+            {% if chart_data_json %}
+            <div class="mb-8">
+                <h4 class="text-lg font-medium text-gray-900 mb-4">Progress Over Time (Last 30 Days)</h4>
+                <div class="chart-container" style="height: 350px;">
+                    <canvas id="progressChart"></canvas>
+                </div>
+                <p class="text-sm text-gray-500 mt-4 text-center">Track your improvement across filler usage, clarity, and pacing over time</p>
+            </div>
+            {% else %}
+            <div class="mb-8 text-center py-8 bg-gray-50 rounded-lg">
+                <i class="fas fa-chart-line text-4xl text-gray-300 mb-2"></i>
+                <p class="text-gray-500">Record more sessions to see your progress charts</p>
+            </div>
+            {% endif %}
+            
+            <!-- Weekly Trends Chart -->
+            {% if weekly_trends_json %}
+            <div class="mb-8">
+                <h4 class="text-lg font-medium text-gray-900 mb-4">Weekly Improvement Trends (Last 4 Weeks)</h4>
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="weeklyTrendsChart"></canvas>
+                </div>
+                <p class="text-sm text-gray-500 mt-4 text-center">Compare your performance week-over-week to identify improvement patterns</p>
+            </div>
+            {% endif %}
+            
+            <!-- Score Distribution Chart -->
+            {% if distribution_data_json %}
+            <div class="mb-8">
+                <h4 class="text-lg font-medium text-gray-900 mb-4">Score Distribution</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="chart-container" style="height: 250px;">
+                        <canvas id="fillerDistributionChart"></canvas>
+                    </div>
+                    <div class="chart-container" style="height: 250px;">
+                        <canvas id="clarityDistributionChart"></canvas>
+                    </div>
+                    <div class="chart-container" style="height: 250px;">
+                        <canvas id="pacingDistributionChart"></canvas>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-500 mt-4 text-center">Distribution of your scores across all sessions</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Average Scores Summary -->
+    {% if avg_filler_score is not None or avg_clarity_score is not None or avg_pacing_score is not None %}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {% if avg_filler_score is not None %}
+        <div class="bg-white overflow-hidden shadow rounded-lg border-t-4 border-red-500">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-comments text-2xl text-red-600"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Avg Filler Score</dt>
+                            <dd class="text-lg font-medium text-gray-900">{{ avg_filler_score }}%</dd>
+                            <dd class="text-xs text-gray-500">Lower is better</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if avg_clarity_score is not None %}
+        <div class="bg-white overflow-hidden shadow rounded-lg border-t-4 border-green-500">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-volume-up text-2xl text-green-600"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Avg Clarity Score</dt>
+                            <dd class="text-lg font-medium text-gray-900">{{ avg_clarity_score }}%</dd>
+                            <dd class="text-xs text-gray-500">Lower is better</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if avg_pacing_score is not None %}
+        <div class="bg-white overflow-hidden shadow rounded-lg border-t-4 border-yellow-500">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-clock text-2xl text-yellow-600"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Avg Pacing Score</dt>
+                            <dd class="text-lg font-medium text-gray-900">{{ avg_pacing_score }}%</dd>
+                            <dd class="text-xs text-gray-500">Lower is better</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Progress Over Time Chart
+    {% if chart_data_json %}
+    const chartData = {{ chart_data_json|safe }};
+    
+    if (chartData && chartData.length > 0) {
+        const dates = chartData.map(d => d.date);
+        const fillerScores = chartData.map(d => (d.filler_score * 100).toFixed(1));
+        const clarityScores = chartData.map(d => (d.clarity_score * 100).toFixed(1));
+        const pacingScores = chartData.map(d => (d.pacing_score * 100).toFixed(1));
+        
+        const ctx = document.getElementById('progressChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: 'Filler Score (%)',
+                    data: fillerScores,
+                    borderColor: 'rgb(239, 68, 68)',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 3,
+                    pointHoverRadius: 5
+                }, {
+                    label: 'Clarity Score (%)',
+                    data: clarityScores,
+                    borderColor: 'rgb(34, 197, 94)',
+                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 3,
+                    pointHoverRadius: 5
+                }, {
+                    label: 'Pacing Score (%)',
+                    data: pacingScores,
+                    borderColor: 'rgb(234, 179, 8)',
+                    backgroundColor: 'rgba(234, 179, 8, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 3,
+                    pointHoverRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Score (%) - Lower is Better'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        }
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                }
+            }
+        });
+    }
+    {% endif %}
+    
+    // Weekly Trends Chart
+    {% if weekly_trends_json %}
+    const weeklyTrends = {{ weekly_trends_json|safe }};
+    if (weeklyTrends && weeklyTrends.length > 0) {
+        const weekLabels = weeklyTrends.map(w => w.week);
+        const weekFiller = weeklyTrends.map(w => (w.filler_score * 100).toFixed(1));
+        const weekClarity = weeklyTrends.map(w => (w.clarity_score * 100).toFixed(1));
+        const weekPacing = weeklyTrends.map(w => (w.pacing_score * 100).toFixed(1));
+        
+        const weeklyCtx = document.getElementById('weeklyTrendsChart').getContext('2d');
+        new Chart(weeklyCtx, {
+            type: 'bar',
+            data: {
+                labels: weekLabels,
+                datasets: [{
+                    label: 'Filler Score (%)',
+                    data: weekFiller,
+                    backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                    borderColor: 'rgb(239, 68, 68)',
+                    borderWidth: 1
+                }, {
+                    label: 'Clarity Score (%)',
+                    data: weekClarity,
+                    backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                    borderColor: 'rgb(34, 197, 94)',
+                    borderWidth: 1
+                }, {
+                    label: 'Pacing Score (%)',
+                    data: weekPacing,
+                    backgroundColor: 'rgba(234, 179, 8, 0.7)',
+                    borderColor: 'rgb(234, 179, 8)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Score (%) - Lower is Better'
+                        }
+                    }
+                }
+            }
+        });
+    }
+    {% endif %}
+    
+    // Score Distribution Charts
+    {% if distribution_data_json %}
+    const distributionData = {{ distribution_data_json|safe }};
+    
+    // Helper function to create histogram data
+    function createHistogramData(scores, bins = 10) {
+        const min = Math.min(...scores);
+        const max = Math.max(...scores);
+        const binSize = (max - min) / bins;
+        const histogram = new Array(bins).fill(0);
+        
+        scores.forEach(score => {
+            const binIndex = Math.min(Math.floor((score - min) / binSize), bins - 1);
+            histogram[binIndex]++;
+        });
+        
+        const binLabels = [];
+        for (let i = 0; i < bins; i++) {
+            binLabels.push(`${(min + i * binSize).toFixed(0)}-${(min + (i + 1) * binSize).toFixed(0)}`);
+        }
+        
+        return { labels: binLabels, data: histogram };
+    }
+    
+    // Filler Distribution
+    if (distributionData.filler_scores && distributionData.filler_scores.length > 0) {
+        const fillerHist = createHistogramData(distributionData.filler_scores, 8);
+        const fillerCtx = document.getElementById('fillerDistributionChart').getContext('2d');
+        new Chart(fillerCtx, {
+            type: 'bar',
+            data: {
+                labels: fillerHist.labels,
+                datasets: [{
+                    label: 'Frequency',
+                    data: fillerHist.data,
+                    backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                    borderColor: 'rgb(239, 68, 68)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    title: {
+                        display: true,
+                        text: 'Filler Score Distribution',
+                        font: { size: 14 }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Frequency' }
+                    },
+                    x: {
+                        title: { display: true, text: 'Score Range (%)' }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Clarity Distribution
+    if (distributionData.clarity_scores && distributionData.clarity_scores.length > 0) {
+        const clarityHist = createHistogramData(distributionData.clarity_scores, 8);
+        const clarityCtx = document.getElementById('clarityDistributionChart').getContext('2d');
+        new Chart(clarityCtx, {
+            type: 'bar',
+            data: {
+                labels: clarityHist.labels,
+                datasets: [{
+                    label: 'Frequency',
+                    data: clarityHist.data,
+                    backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                    borderColor: 'rgb(34, 197, 94)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    title: {
+                        display: true,
+                        text: 'Clarity Score Distribution',
+                        font: { size: 14 }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Frequency' }
+                    },
+                    x: {
+                        title: { display: true, text: 'Score Range (%)' }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Pacing Distribution
+    if (distributionData.pacing_scores && distributionData.pacing_scores.length > 0) {
+        const pacingHist = createHistogramData(distributionData.pacing_scores, 8);
+        const pacingCtx = document.getElementById('pacingDistributionChart').getContext('2d');
+        new Chart(pacingCtx, {
+            type: 'bar',
+            data: {
+                labels: pacingHist.labels,
+                datasets: [{
+                    label: 'Frequency',
+                    data: pacingHist.data,
+                    backgroundColor: 'rgba(234, 179, 8, 0.7)',
+                    borderColor: 'rgb(234, 179, 8)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    title: {
+                        display: true,
+                        text: 'Pacing Score Distribution',
+                        font: { size: 14 }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Frequency' }
+                    },
+                    x: {
+                        title: { display: true, text: 'Score Range (%)' }
+                    }
+                }
+            }
+        });
+    }
+    {% endif %}
+});
+</script>
+{% endblock %}
+

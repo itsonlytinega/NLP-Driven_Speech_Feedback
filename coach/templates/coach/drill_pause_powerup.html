@@ -1,0 +1,517 @@
+{% extends 'coach/drill_unified_base.html' %}
+{% load static %}
+
+{% block drill_content %}
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="text-center">
+        <h2 class="text-3xl font-bold text-gray-800 mb-4">Pause Power-Up</h2>
+        <p class="text-lg text-gray-600 mb-6">Replace filler words with powerful pauses in this 1-minute challenge!</p>
+    </div>
+
+    <!-- Timer and Progress -->
+    <div class="bg-gradient-to-r from-green-100 to-blue-100 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Power-Up Timer</h3>
+        
+        <div class="text-center mb-6">
+            <div id="timer-display" class="text-6xl font-bold text-green-600 mb-4">01:00</div>
+            <div id="timer-status" class="text-lg font-semibold text-gray-600">Ready to power up!</div>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="mb-6">
+            <div class="flex justify-between text-sm text-gray-600 mb-2">
+                <span>Power Level</span>
+                <span id="power-level">0%</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-4">
+                <div id="power-bar" class="bg-gradient-to-r from-green-500 to-blue-500 h-4 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+        </div>
+        
+        <!-- Control Buttons -->
+        <div class="text-center space-x-4">
+            <button id="start-btn" onclick="startPowerUp()" 
+                    class="px-8 py-4 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold text-lg transition-colors">
+                ⚡ Start Power-Up
+            </button>
+            <button id="pause-btn" onclick="pausePowerUp()" 
+                    class="px-8 py-4 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-semibold text-lg transition-colors hidden">
+                ⏸️ Pause
+            </button>
+            <button id="stop-btn" onclick="stopPowerUp()" 
+                    class="px-8 py-4 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold text-lg transition-colors hidden">
+                ⏹️ Stop
+            </button>
+        </div>
+    </div>
+
+    <!-- Challenge Instructions -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Challenge Instructions</h3>
+        
+        <div class="bg-gradient-to-r from-blue-50 to-green-50 rounded-lg p-6 mb-6">
+            <h4 class="text-lg font-bold text-blue-800 mb-3">Your Mission</h4>
+            <p class="text-gray-700 leading-relaxed mb-4">
+                Speak continuously for 1 minute, replacing any filler words (um, uh, like, you know) with brief pauses. 
+                Each pause replacement earns you power points!
+            </p>
+            
+            <!-- Current Topic -->
+            <div class="mt-4">
+                <h5 class="font-semibold text-gray-700 mb-2">Current Topic:</h5>
+                <div id="current-topic" class="text-lg text-gray-600">{{ current_topic }}</div>
+            </div>
+            
+            <!-- New Topic Button -->
+            <div class="text-center mt-4">
+                <button onclick="loadNewTopic()" 
+                        class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors">
+                    🎯 New Topic
+                </button>
+            </div>
+        </div>
+        
+        <!-- Filler Word Guide -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h4 class="font-semibold text-gray-700 mb-3">Common Filler Words</h4>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="px-3 py-2 bg-red-100 text-red-800 rounded text-center font-semibold">um</div>
+                    <div class="px-3 py-2 bg-red-100 text-red-800 rounded text-center font-semibold">uh</div>
+                    <div class="px-3 py-2 bg-red-100 text-red-800 rounded text-center font-semibold">like</div>
+                    <div class="px-3 py-2 bg-red-100 text-red-800 rounded text-center font-semibold">you know</div>
+                    <div class="px-3 py-2 bg-red-100 text-red-800 rounded text-center font-semibold">so</div>
+                    <div class="px-3 py-2 bg-red-100 text-red-800 rounded text-center font-semibold">well</div>
+                </div>
+            </div>
+            
+            <div>
+                <h4 class="font-semibold text-gray-700 mb-3">Power-Up Strategy</h4>
+                <ul class="text-sm text-gray-600 space-y-1">
+                    <li>• Replace "um" with a 1-second pause</li>
+                    <li>• Replace "uh" with a brief silence</li>
+                    <li>• Replace "like" with "I think"</li>
+                    <li>• Replace "you know" with "in other words"</li>
+                    <li>• Use pauses to gather your thoughts</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recording Section -->
+    <div class="bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Power-Up Recording</h3>
+        
+        <div class="text-center">
+            <button id="record-btn" onclick="startRecording()" 
+                    class="px-8 py-4 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold text-lg transition-colors">
+                🎤 Start Recording
+            </button>
+            <div id="recording-status" class="mt-4 text-lg font-semibold text-gray-600">Ready to record your power-up session!</div>
+        </div>
+        
+        <!-- Audio Player -->
+        <div id="audio-player" class="mt-6 hidden">
+            <audio controls class="w-full" id="power-up-audio">
+                <source src="" type="audio/wav">
+            </audio>
+        </div>
+    </div>
+
+    <!-- Real-time Stats -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Real-time Statistics</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Filler Detected</div>
+                <div id="filler-count" class="text-3xl font-bold text-red-600">0</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Pauses Used</div>
+                <div id="pause-count" class="text-3xl font-bold text-blue-600">0</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Power Points</div>
+                <div id="power-points" class="text-3xl font-bold text-green-600">0</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Clean Streak</div>
+                <div id="clean-streak" class="text-3xl font-bold text-purple-600">0</div>
+            </div>
+        </div>
+        
+        <!-- Power Level Indicator -->
+        <div class="mt-6">
+            <div class="flex justify-between text-sm text-gray-600 mb-2">
+                <span>Power Level</span>
+                <span id="power-level-text">Beginner</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-6">
+                <div id="power-level-bar" class="bg-gradient-to-r from-green-400 via-yellow-400 to-red-500 h-6 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <div class="flex justify-between text-xs text-gray-500 mt-1">
+                <span>Beginner</span>
+                <span>Intermediate</span>
+                <span>Advanced</span>
+                <span>Master</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Session Results -->
+    <div id="session-results" class="bg-gradient-to-r from-green-100 to-blue-100 rounded-lg p-6 hidden">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Session Results</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Final Score</div>
+                <div id="final-score" class="text-4xl font-bold text-green-600">0</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Efficiency</div>
+                <div id="efficiency" class="text-4xl font-bold text-blue-600">0%</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Power Level</div>
+                <div id="final-power-level" class="text-4xl font-bold text-purple-600">Beginner</div>
+            </div>
+        </div>
+        
+        <!-- Achievement Badges -->
+        <div class="mt-6">
+            <h4 class="font-semibold text-gray-700 mb-3">Achievements Unlocked</h4>
+            <div id="achievements" class="flex flex-wrap gap-3">
+                <!-- Achievements will be added here -->
+            </div>
+        </div>
+        
+        <!-- Performance Tips -->
+        <div class="mt-6 bg-white rounded-lg p-4">
+            <h4 class="font-semibold text-gray-700 mb-2">Performance Tips</h4>
+            <div id="performance-tips" class="text-sm text-gray-600">
+                <!-- Tips will be added here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback -->
+    <div id="feedback-container" class="bg-gray-50 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Power-Up Feedback</h3>
+        <div id="feedback-buttons"></div>
+    </div>
+</div>
+
+<script>
+// Drill-specific JavaScript
+function getDrillSpecificParams() {
+    // Override this function in individual drill templates if needed
+    return {};
+}
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/drills.js' %}"></script>
+<script>
+    let powerUpActive = false;
+    let timeRemaining = 60; // 1 minute
+    let fillerCount = 0;
+    let pauseCount = 0;
+    let powerPoints = 0;
+    let cleanStreak = 0;
+    let maxCleanStreak = 0;
+    let recordingActive = false;
+    let timerInterval = null;
+    let fillerDetectionInterval = null;
+
+    const topics = {{ topic_prompts|safe }};
+
+    function startPowerUp() {
+        powerUpActive = true;
+        timeRemaining = 60;
+        
+        document.getElementById('start-btn').classList.add('hidden');
+        document.getElementById('pause-btn').classList.remove('hidden');
+        document.getElementById('stop-btn').classList.remove('hidden');
+        
+        document.getElementById('timer-status').textContent = 'Power-up in progress!';
+        
+        startTimer();
+        startFillerDetection();
+    }
+
+    function pausePowerUp() {
+        powerUpActive = false;
+        if (timerInterval) {
+            clearInterval(timerInterval);
+        }
+        if (fillerDetectionInterval) {
+            clearInterval(fillerDetectionInterval);
+        }
+        
+        document.getElementById('pause-btn').textContent = '▶️ Resume';
+        document.getElementById('pause-btn').onclick = resumePowerUp;
+    }
+
+    function resumePowerUp() {
+        powerUpActive = true;
+        document.getElementById('pause-btn').textContent = '⏸️ Pause';
+        document.getElementById('pause-btn').onclick = pausePowerUp;
+        
+        startTimer();
+        startFillerDetection();
+    }
+
+    function stopPowerUp() {
+        powerUpActive = false;
+        if (timerInterval) {
+            clearInterval(timerInterval);
+        }
+        if (fillerDetectionInterval) {
+            clearInterval(fillerDetectionInterval);
+        }
+        
+        document.getElementById('start-btn').classList.remove('hidden');
+        document.getElementById('pause-btn').classList.add('hidden');
+        document.getElementById('stop-btn').classList.add('hidden');
+        
+        document.getElementById('timer-status').textContent = 'Power-up complete!';
+        
+        showSessionResults();
+    }
+
+    function startTimer() {
+        timerInterval = setInterval(() => {
+            if (!powerUpActive) return;
+            
+            timeRemaining--;
+            updateTimerDisplay();
+            updatePowerBar();
+            
+            if (timeRemaining <= 0) {
+                stopPowerUp();
+            }
+        }, 1000);
+    }
+
+    function startFillerDetection() {
+        // Simulate filler detection every 2 seconds
+        fillerDetectionInterval = setInterval(() => {
+            if (!powerUpActive) return;
+            
+            // Simulate random filler detection
+            if (Math.random() < 0.3) { // 30% chance of detecting a filler
+                detectFiller();
+            }
+        }, 2000);
+    }
+
+    function detectFiller() {
+        fillerCount++;
+        document.getElementById('filler-count').textContent = fillerCount;
+        
+        // Reset clean streak
+        cleanStreak = 0;
+        document.getElementById('clean-streak').textContent = cleanStreak;
+        
+        // Show filler detection alert
+        showFillerAlert();
+    }
+
+    function usePause() {
+        pauseCount++;
+        powerPoints += 10; // 10 points per pause
+        cleanStreak++;
+        
+        if (cleanStreak > maxCleanStreak) {
+            maxCleanStreak = cleanStreak;
+        }
+        
+        document.getElementById('pause-count').textContent = pauseCount;
+        document.getElementById('power-points').textContent = powerPoints;
+        document.getElementById('clean-streak').textContent = cleanStreak;
+        
+        updatePowerLevel();
+        
+        // Show pause success feedback
+        showPauseSuccess();
+    }
+
+    function updateTimerDisplay() {
+        const minutes = Math.floor(timeRemaining / 60);
+        const seconds = timeRemaining % 60;
+        document.getElementById('timer-display').textContent = 
+            `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    function updatePowerBar() {
+        const progress = ((60 - timeRemaining) / 60) * 100;
+        document.getElementById('power-bar').style.width = progress + '%';
+        document.getElementById('power-level').textContent = Math.round(progress) + '%';
+    }
+
+    function updatePowerLevel() {
+        const totalPoints = powerPoints;
+        let level = 'Beginner';
+        let levelProgress = 0;
+        
+        if (totalPoints >= 100) {
+            level = 'Master';
+            levelProgress = 100;
+        } else if (totalPoints >= 60) {
+            level = 'Advanced';
+            levelProgress = 80;
+        } else if (totalPoints >= 30) {
+            level = 'Intermediate';
+            levelProgress = 60;
+        } else {
+            level = 'Beginner';
+            levelProgress = Math.min((totalPoints / 30) * 60, 60);
+        }
+        
+        document.getElementById('power-level-text').textContent = level;
+        document.getElementById('power-level-bar').style.width = levelProgress + '%';
+    }
+
+    function showFillerAlert() {
+        const alert = document.createElement('div');
+        alert.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-pulse';
+        alert.textContent = '🚨 Filler detected! Use pause instead!';
+        
+        document.body.appendChild(alert);
+        
+        setTimeout(() => {
+            alert.remove();
+        }, 2000);
+    }
+
+    function showPauseSuccess() {
+        const success = document.createElement('div');
+        success.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-pulse';
+        success.textContent = '⚡ Power-up! +10 points';
+        
+        document.body.appendChild(success);
+        
+        setTimeout(() => {
+            success.remove();
+        }, 1500);
+    }
+
+    function loadNewTopic() {
+        const randomTopic = topics[Math.floor(Math.random() * topics.length)];
+        document.getElementById('current-topic').textContent = randomTopic;
+    }
+
+    function startRecording() {
+        if (recordingActive) return;
+        
+        recordingActive = true;
+        document.getElementById('record-btn').textContent = 'Recording...';
+        document.getElementById('record-btn').disabled = true;
+        document.getElementById('recording-status').textContent = 'Recording your power-up session...';
+        
+        drillComponents.startMic({
+            onStart: function() {
+                console.log('Power-up recording started');
+            },
+            onStop: function(audioBlob, audioUrl) {
+                recordingActive = false;
+                document.getElementById('record-btn').textContent = '🎤 Start Recording';
+                document.getElementById('record-btn').disabled = false;
+                document.getElementById('recording-status').textContent = 'Recording complete!';
+                
+                // Show audio playback
+                const audioPlayer = document.getElementById('audio-player');
+                const audio = document.getElementById('power-up-audio');
+                audio.src = audioUrl;
+                audioPlayer.classList.remove('hidden');
+                
+                // Show feedback buttons
+                drillComponents.showFeedback('feedback-buttons', function(rating) {
+                    console.log('Power-up feedback:', rating);
+                });
+            },
+            onError: function(error) {
+                alert('Error accessing microphone: ' + error.message);
+                recordingActive = false;
+                document.getElementById('record-btn').textContent = '🎤 Start Recording';
+                document.getElementById('record-btn').disabled = false;
+            }
+        });
+    }
+
+    function showSessionResults() {
+        const finalScore = powerPoints;
+        const efficiency = Math.round((pauseCount / (pauseCount + fillerCount)) * 100) || 0;
+        const finalPowerLevel = document.getElementById('power-level-text').textContent;
+        
+        document.getElementById('final-score').textContent = finalScore;
+        document.getElementById('efficiency').textContent = efficiency + '%';
+        document.getElementById('final-power-level').textContent = finalPowerLevel;
+        
+        // Generate achievements
+        generateAchievements();
+        
+        // Generate performance tips
+        generatePerformanceTips();
+        
+        document.getElementById('session-results').classList.remove('hidden');
+    }
+
+    function generateAchievements() {
+        const achievements = [];
+        
+        if (powerPoints >= 50) {
+            achievements.push('<div class="px-3 py-1 bg-yellow-200 text-yellow-800 rounded-full text-sm font-semibold">🏆 Power Master</div>');
+        }
+        if (maxCleanStreak >= 5) {
+            achievements.push('<div class="px-3 py-1 bg-green-200 text-green-800 rounded-full text-sm font-semibold">🔥 Clean Streak</div>');
+        }
+        if (pauseCount >= 10) {
+            achievements.push('<div class="px-3 py-1 bg-blue-200 text-blue-800 rounded-full text-sm font-semibold">⏸️ Pause Pro</div>');
+        }
+        if (fillerCount <= 3) {
+            achievements.push('<div class="px-3 py-1 bg-purple-200 text-purple-800 rounded-full text-sm font-semibold">✨ Filler Free</div>');
+        }
+        
+        document.getElementById('achievements').innerHTML = achievements.join('');
+    }
+
+    function generatePerformanceTips() {
+        const tips = [];
+        
+        if (fillerCount > 5) {
+            tips.push('• Try to reduce filler words by planning your thoughts');
+        }
+        if (pauseCount < 5) {
+            tips.push('• Use more pauses to replace filler words');
+        }
+        if (maxCleanStreak < 3) {
+            tips.push('• Practice maintaining longer clean streaks');
+        }
+        
+        if (tips.length === 0) {
+            tips.push('• Great job! Keep practicing to maintain your skills');
+        }
+        
+        document.getElementById('performance-tips').innerHTML = tips.join('');
+    }
+
+    // Add click handler for pause button simulation
+    document.addEventListener('click', function(e) {
+        if (e.target.textContent === '⏸️ Pause' || e.target.textContent === '▶️ Resume') {
+            // This is handled by the pause/resume functions
+        } else if (powerUpActive && e.target.tagName === 'BUTTON' && e.target.textContent.includes('Pause')) {
+            usePause();
+        }
+    });
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        updateTimerDisplay();
+        updatePowerBar();
+    });
+</script>
+{% endblock %}

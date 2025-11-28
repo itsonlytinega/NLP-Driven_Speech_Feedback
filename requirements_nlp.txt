@@ -1,0 +1,26 @@
+# NLP and BERT Training Dependencies
+# Additional requirements for speech analysis training pipeline
+
+# PyTorch and audio processing
+torch>=2.0.0
+torchaudio>=2.0.0
+
+# Data processing
+pandas>=1.5.0
+numpy>=1.23.0
+scikit-learn>=1.2.0
+librosa>=0.10.0
+
+# NLP and ML models
+transformers>=4.30.0
+xgboost>=1.7.0
+
+# Utilities
+tqdm>=4.65.0
+textstat>=0.7.0
+
+# Audio download
+yt-dlp>=2023.3.24
+
+
+

@@ -1,0 +1,404 @@
+{% extends 'coach/base.html' %}
+{% load static %}
+
+{% block title %}{{ drill.name }} - Verbal Coach{% endblock %}
+
+{% block extra_css %}
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<link href="{% static 'css/styles.css' %}" rel="stylesheet">
+<style>
+    .drill-unified-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    
+    .drill-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 1rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    
+    .drill-header h1 {
+        font-size: 2.5rem;
+        font-weight: 900;
+        margin-bottom: 0.5rem;
+    }
+    
+    .drill-header .skill-badge {
+        display: inline-block;
+        background: rgba(255,255,255,0.2);
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+    }
+    
+    .ml-feedback-panel {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        display: none;
+    }
+    
+    .ml-feedback-panel.active {
+        display: block;
+    }
+    
+    .ml-scores-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .ml-score-card {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        padding: 1rem;
+        border-radius: 0.5rem;
+        text-align: center;
+    }
+    
+    .ml-score-value {
+        font-size: 2rem;
+        font-weight: 900;
+        color: #667eea;
+    }
+    
+    .ml-score-label {
+        font-size: 0.875rem;
+        color: #666;
+        margin-top: 0.25rem;
+    }
+    
+    .ml-score-bar {
+        height: 8px;
+        background: #e0e0e0;
+        border-radius: 4px;
+        margin-top: 0.5rem;
+        overflow: hidden;
+    }
+    
+    .ml-score-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        transition: width 0.3s ease;
+    }
+    
+    .recording-controls {
+        background: white;
+        border-radius: 1rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+    
+    .record-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        font-size: 1.25rem;
+        font-weight: 600;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .record-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    }
+    
+    .record-btn.recording {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+    
+    .audio-player-container {
+        margin-top: 1rem;
+        display: none;
+    }
+    
+    .audio-player-container.active {
+        display: block;
+    }
+    
+    .progress-section {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .progress-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .progress-stat {
+        text-align: center;
+        padding: 1rem;
+        background: #f5f7fa;
+        border-radius: 0.5rem;
+    }
+    
+    .progress-stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #667eea;
+    }
+    
+    .progress-stat-label {
+        font-size: 0.875rem;
+        color: #666;
+        margin-top: 0.25rem;
+    }
+    
+    .difficulty-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin-left: 1rem;
+    }
+    
+    .difficulty-beginner {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .difficulty-intermediate {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .difficulty-advanced {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .personalization-note {
+        background: #e7f3ff;
+        border-left: 4px solid #667eea;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        font-size: 0.875rem;
+        color: #333;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="drill-unified-container">
+    <!-- Drill Header -->
+    <div class="drill-header">
+        <h1>{{ drill.name }}</h1>
+        <p class="mb-2">{{ drill.description }}</p>
+        <span class="skill-badge">{{ drill.get_skill_type_display }}</span>
+        {% if difficulty_level %}
+        <span class="difficulty-badge difficulty-{{ difficulty_level }}">{{ difficulty_level|title }}</span>
+        {% endif %}
+    </div>
+    
+    <!-- Personalization Note -->
+    {% if personalization_note %}
+    <div class="personalization-note">
+        <strong>Personalized for you:</strong> {{ personalization_note }}
+    </div>
+    {% endif %}
+    
+    <!-- ML Feedback Panel (hidden until analysis) -->
+    <div id="ml-feedback-panel" class="ml-feedback-panel">
+        <h3 class="mb-3" style="font-size: 1.5rem; font-weight: 700; color: #333;">ML Analysis Results</h3>
+        
+        <div class="ml-scores-grid">
+            <div class="ml-score-card">
+                <div class="ml-score-value" id="overall-score">--</div>
+                <div class="ml-score-label">Overall Score</div>
+                <div class="ml-score-bar">
+                    <div class="ml-score-bar-fill" id="overall-bar" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="ml-score-card">
+                <div class="ml-score-value" id="filler-score">--</div>
+                <div class="ml-score-label">Filler Score</div>
+                <div class="ml-score-bar">
+                    <div class="ml-score-bar-fill" id="filler-bar" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="ml-score-card">
+                <div class="ml-score-value" id="clarity-score">--</div>
+                <div class="ml-score-label">Clarity Score</div>
+                <div class="ml-score-bar">
+                    <div class="ml-score-bar-fill" id="clarity-bar" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="ml-score-card">
+                <div class="ml-score-value" id="pacing-score">--</div>
+                <div class="ml-score-label">Pacing Score</div>
+                <div class="ml-score-bar">
+                    <div class="ml-score-bar-fill" id="pacing-bar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="ml-metrics-details" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e0e0e0;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+                <div>
+                    <div style="font-size: 0.875rem; color: #666;">Fillers Detected</div>
+                    <div id="fillers-count" style="font-size: 1.25rem; font-weight: 700; color: #333;">--</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.875rem; color: #666;">Words Per Minute</div>
+                    <div id="wpm-value" style="font-size: 1.25rem; font-weight: 700; color: #333;">--</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.875rem; color: #666;">Transcription</div>
+                    <div id="transcription-text" style="font-size: 0.875rem; color: #666; margin-top: 0.25rem; font-style: italic;">--</div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="recommendations" style="margin-top: 1rem; padding: 1rem; background: #f5f7fa; border-radius: 0.5rem; display: none;">
+            <h4 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: #333;">Recommendations:</h4>
+            <ul id="recommendations-list" style="margin: 0; padding-left: 1.5rem; color: #666;"></ul>
+        </div>
+    </div>
+    
+    <!-- Drill-Specific Content -->
+    {% block drill_content %}
+    <!-- Default drill content if no specific template -->
+    {% if mlk_excerpt %}
+    <div class="space-y-6">
+        <!-- MLK Excerpt Display (for Poem Echo) -->
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-8 rounded-xl">
+            <h3 class="text-xl font-semibold text-gray-700 mb-4">Read this excerpt aloud:</h3>
+            <div class="text-2xl font-medium text-gray-800 leading-relaxed mb-6" id="excerpt-text">
+                "{{ mlk_excerpt }}"
+            </div>
+            {% if phonetic_tips %}
+            <button onclick="highlightWords()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors">
+                Highlight Difficult Words
+            </button>
+            {% endif %}
+        </div>
+
+        <!-- Phonetic Tips -->
+        {% if phonetic_tips %}
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-lg">
+            <h3 class="text-lg font-semibold text-yellow-800 mb-4">Pronunciation Tips</h3>
+            <div class="text-left space-y-2">
+                {% for tip in phonetic_tips %}
+                <div class="text-yellow-700">{{ tip }}</div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% endblock %}
+    
+    <!-- Unified Recording Controls -->
+    <div class="recording-controls">
+        <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; color: #333;">Practice Recording</h3>
+        <button id="record-btn" class="record-btn" onclick="toggleRecording()">
+            Start Recording
+        </button>
+        <div id="recording-status" style="margin-top: 1rem; font-size: 1rem; color: #666;">
+            Ready to record
+        </div>
+        
+        <div id="audio-player-container" class="audio-player-container">
+            <audio id="audio-player" controls style="width: 100%; margin-top: 1rem;"></audio>
+        </div>
+    </div>
+    
+    <!-- Progress Tracking -->
+    <div class="progress-section">
+        <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; color: #333;">Your Progress</h3>
+        <div class="progress-stats">
+            <div class="progress-stat">
+                <div class="progress-stat-value" id="total-completions">0</div>
+                <div class="progress-stat-label">Total Completions</div>
+            </div>
+            <div class="progress-stat">
+                <div class="progress-stat-value" id="average-score">--</div>
+                <div class="progress-stat-label">Average Score</div>
+            </div>
+            <div class="progress-stat">
+                <div class="progress-stat-value" id="best-score">--</div>
+                <div class="progress-stat-label">Best Score</div>
+            </div>
+            <div class="progress-stat">
+                <div class="progress-stat-value" id="improvement-trend">--</div>
+                <div class="progress-stat-label">Trend</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/drill_unified.js' %}"></script>
+<script>
+// Initialize drill-specific JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    // Load user progress
+    loadUserProgress();
+    
+    // Initialize drill-specific code if exists
+    if (typeof initDrill !== 'undefined') {
+        initDrill();
+    }
+});
+
+// Drill configuration
+const DRILL_CONFIG = {
+    drillId: {{ drill.id }},
+    skillType: '{{ drill.skill_type }}',
+    difficultyLevel: '{{ difficulty_level|default:"beginner" }}',
+    personalizationNote: '{{ personalization_note|default:"" }}'
+};
+
+// Highlight words function (for Poem Echo and similar drills)
+function highlightWords() {
+    const excerptText = document.getElementById('excerpt-text');
+    if (!excerptText) return;
+    
+    const text = excerptText.textContent.replace(/"/g, '');
+    const tips = {{ phonetic_tips|safe|default:"[]" }};
+    let highlightedText = text;
+    
+    if (tips && tips.length > 0) {
+        tips.forEach(tip => {
+            const match = tip.match(/'([^']+)':/);
+            if (match) {
+                const word = match[1];
+                const regex = new RegExp(`\\b${word}\\b`, 'gi');
+                highlightedText = highlightedText.replace(regex, `<mark class="bg-yellow-200 px-1 rounded">${word}</mark>`);
+            }
+        });
+    }
+    
+    excerptText.innerHTML = '"' + highlightedText + '"';
+}
+</script>
+{% endblock %}
+

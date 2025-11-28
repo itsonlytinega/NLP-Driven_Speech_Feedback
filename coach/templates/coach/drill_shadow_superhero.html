@@ -1,0 +1,263 @@
+{% extends 'coach/drill_unified_base.html' %}
+
+{% block drill_content %}
+<div class="space-y-6">
+    <!-- TED Script -->
+    <div class="bg-gradient-to-r from-red-50 to-orange-50 p-8 rounded-xl">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">TED Talk Excerpt</h3>
+        {% if selected_script %}
+        <div class="text-lg font-medium text-red-800 mb-4">{{ selected_script.title }}</div>
+        <div class="text-xl text-gray-800 leading-relaxed mb-6" id="script-text">
+            "{{ selected_script.text }}"
+        </div>
+        <div class="bg-red-100 p-4 rounded-lg">
+            <p class="text-red-800 font-medium">Duration: {{ selected_script.duration }} seconds</p>
+        </div>
+        {% else %}
+        <div class="text-red-500">No script available. Please refresh the page.</div>
+        {% endif %}
+    </div>
+
+    <!-- Reference Audio -->
+    <div class="bg-gray-100 p-6 rounded-lg">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Reference Audio</h3>
+        {% if drill.reference_audio %}
+        <audio id="reference-audio" controls class="w-full mb-4">
+            <source src="{{ drill.reference_audio.url }}" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
+        <div class="text-gray-600 text-sm">
+            <p>Listen to the reference audio and try to match the speaker's pace, tone, and pronunciation.</p>
+        </div>
+        {% else %}
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg mb-4">
+            <p class="text-yellow-800 text-sm">No reference audio available. Read the text above and record your own version to compare.</p>
+        </div>
+        <div class="text-gray-600 text-sm">
+            <p>Read the TED excerpt above at a natural pace, then record yourself saying the same text.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Waveform Visualization -->
+    <div class="bg-white p-6 rounded-lg border border-gray-200">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Waveform Comparison</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h4 class="font-medium text-gray-600 mb-2">Reference Waveform:</h4>
+                <canvas id="reference-waveform" width="400" height="100" class="border border-gray-300 rounded w-full"></canvas>
+            </div>
+            <div>
+                <h4 class="font-medium text-gray-600 mb-2">Your Waveform:</h4>
+                <canvas id="user-waveform" width="400" height="100" class="border border-gray-300 rounded w-full"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="bg-purple-50 border-l-4 border-purple-400 p-6 rounded-lg">
+        <h3 class="text-lg font-semibold text-purple-800 mb-4">Instructions</h3>
+        <ol class="text-left text-purple-700 space-y-2">
+            <li>1. Listen to the reference audio carefully</li>
+            <li>2. Pay attention to the speaker's pace and rhythm</li>
+            <li>3. Try to "shadow" or repeat along with the speaker</li>
+            <li>4. Record yourself saying the same text using the recording controls below</li>
+            <li>5. Compare your waveform with the reference</li>
+            <li>6. Review the ML analysis results to see how well you matched</li>
+        </ol>
+    </div>
+
+    <!-- Shadowing Tips -->
+    <div class="bg-blue-50 border-l-4 border-blue-400 p-6 rounded-lg">
+        <h3 class="text-lg font-semibold text-blue-800 mb-4">Shadowing Tips</h3>
+        <ul class="text-left text-blue-700 space-y-2">
+            <li>• Start by listening without speaking</li>
+            <li>• Then try to speak along with the audio</li>
+            <li>• Focus on matching the rhythm and pace</li>
+            <li>• Don't worry about perfect pronunciation</li>
+            <li>• The goal is to improve your flow</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+// Drill-specific JavaScript for Shadow Superhero
+const selectedScript = {{ selected_script|safe|default:"null" }};
+
+function getDrillSpecificParams() {
+    const scriptText = document.getElementById('script-text');
+    const targetText = scriptText ? scriptText.textContent.replace(/"/g, '').trim() : '';
+    return {
+        'target_text': targetText,
+        'target_wpm': selectedScript ? (selectedScript.duration ? Math.round((targetText.split(/\s+/).length / selectedScript.duration) * 60) : 150) : 150
+    };
+}
+
+// Draw waveform on canvas (simulated or from audio)
+function drawWaveform(canvas, color, dataArray) {
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    // Clear canvas
+    ctx.fillStyle = '#f3f4f6';
+    ctx.fillRect(0, 0, width, height);
+    
+    ctx.fillStyle = color;
+    
+    if (dataArray && dataArray.length > 0) {
+        // Draw from actual audio data
+        const barWidth = (width / dataArray.length) * 2.5;
+        let x = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+            const barHeight = (dataArray[i] / 255) * height * 0.8;
+            ctx.fillRect(x, (height - barHeight) / 2, barWidth, barHeight);
+            x += barWidth + 1;
+        }
+    } else {
+        // Draw simulated waveform
+        for (let i = 0; i < width; i += 4) {
+            const barHeight = Math.random() * height * 0.8;
+            ctx.fillRect(i, (height - barHeight) / 2, 2, barHeight);
+        }
+    }
+}
+
+// Generate waveform from audio element using Web Audio API
+function setupAudioAnalysis(audioElement, canvas, color) {
+    if (!audioElement || !canvas) return null;
+    
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        analyser.smoothingTimeConstant = 0.8;
+        
+        const source = audioContext.createMediaElementSource(audioElement);
+        source.connect(analyser);
+        analyser.connect(audioContext.destination);
+        
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        
+        let animationId = null;
+        
+        function updateWaveform() {
+            analyser.getByteFrequencyData(dataArray);
+            drawWaveform(canvas, color, dataArray);
+            animationId = requestAnimationFrame(updateWaveform);
+        }
+        
+        // Start updating when audio is ready
+        audioElement.addEventListener('loadeddata', function() {
+            if (animationId) cancelAnimationFrame(animationId);
+            updateWaveform();
+        });
+        
+        // Also update on play
+        audioElement.addEventListener('play', function() {
+            if (animationId) cancelAnimationFrame(animationId);
+            updateWaveform();
+        });
+        
+        // Stop updating on pause/end
+        audioElement.addEventListener('pause', function() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+        });
+        
+        audioElement.addEventListener('ended', function() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+        });
+        
+        // Initial draw
+        if (audioElement.readyState >= 2) {
+            updateWaveform();
+        } else {
+            // Draw placeholder until audio loads
+            drawWaveform(canvas, color, null);
+        }
+        
+        return { stop: function() { if (animationId) cancelAnimationFrame(animationId); } };
+    } catch (e) {
+        console.warn('Audio analysis not available:', e);
+        // Fallback: Draw simulated waveform
+        drawWaveform(canvas, color, null);
+        return null;
+    }
+}
+
+// Generate waveform from audio blob
+function generateWaveformFromBlob(audioBlob, canvas, color) {
+    if (!audioBlob || !canvas) {
+        // Fallback: Draw simulated waveform
+        if (canvas) drawWaveform(canvas, color, null);
+        return;
+    }
+    
+    const audioUrl = URL.createObjectURL(audioBlob);
+    const audio = new Audio(audioUrl);
+    
+    audio.addEventListener('loadeddata', function() {
+        setupAudioAnalysis(audio, canvas, color);
+    });
+    
+    audio.addEventListener('error', function() {
+        console.warn('Error loading audio blob for waveform');
+        drawWaveform(canvas, color, null);
+    });
+    
+    // Try to load
+    audio.load();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const referenceAudio = document.getElementById('reference-audio');
+    const referenceCanvas = document.getElementById('reference-waveform');
+    
+    // Setup reference waveform
+    if (referenceAudio && referenceCanvas) {
+        setupAudioAnalysis(referenceAudio, referenceCanvas, '#3b82f6');
+    } else if (referenceCanvas) {
+        // No reference audio available - draw placeholder
+        const ctx = referenceCanvas.getContext('2d');
+        ctx.fillStyle = '#f3f4f6';
+        ctx.fillRect(0, 0, referenceCanvas.width, referenceCanvas.height);
+        ctx.fillStyle = '#9ca3af';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('No reference audio available', referenceCanvas.width / 2, referenceCanvas.height / 2);
+    }
+    
+    // Initialize user waveform canvas (empty)
+    const userCanvas = document.getElementById('user-waveform');
+    if (userCanvas) {
+        const ctx = userCanvas.getContext('2d');
+        ctx.fillStyle = '#f3f4f6';
+        ctx.fillRect(0, 0, userCanvas.width, userCanvas.height);
+        ctx.fillStyle = '#9ca3af';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Record to see your waveform', userCanvas.width / 2, userCanvas.height / 2);
+    }
+    
+    // Generate user waveform after recording (called from drill_unified.js)
+    window.drawUserWaveform = function(audioBlob) {
+        const userCanvas = document.getElementById('user-waveform');
+        if (userCanvas && audioBlob) {
+            generateWaveformFromBlob(audioBlob, userCanvas, '#10b981');
+        } else if (userCanvas) {
+            // Fallback: Draw simulated waveform
+            drawWaveform(userCanvas, '#10b981', null);
+        }
+    };
+});
+</script>
+{% endblock %}
