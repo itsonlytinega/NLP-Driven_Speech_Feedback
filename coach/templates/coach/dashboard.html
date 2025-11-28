@@ -1,0 +1,314 @@
+{% extends 'coach/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Verbal Coach{% endblock %}
+
+{% block extra_css %}
+<style>
+    .progress-bar {
+        transition: width 0.6s ease;
+    }
+    .encouragement-card {
+        animation: slideIn 0.5s ease-out;
+    }
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Welcome Section -->
+    <div class="bg-gradient-to-r from-blue-600 to-purple-600 overflow-hidden shadow rounded-lg text-white">
+        <div class="px-4 py-5 sm:p-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-user-circle text-5xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h1 class="text-3xl font-bold">Welcome back, {{ user.first_name }}!</h1>
+                        <p class="text-blue-100 mt-1">Track your progress and improve your public speaking skills</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold">{{ total_sessions|default:"0" }}</div>
+                    <div class="text-sm text-blue-100">Total Sessions</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Encouraging Message -->
+    {% if encouraging_message %}
+    <div class="encouragement-card bg-{% if encouraging_message.type == 'success' %}green{% elif encouraging_message.type == 'warning' %}yellow{% else %}blue{% endif %}-50 border-l-4 border-{% if encouraging_message.type == 'success' %}green{% elif encouraging_message.type == 'warning' %}yellow{% else %}blue{% endif %}-400 p-4 rounded-lg">
+        <div class="flex items-start">
+            <div class="flex-shrink-0">
+                <i class="fas fa-{% if encouraging_message.type == 'success' %}check-circle{% elif encouraging_message.type == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} text-{% if encouraging_message.type == 'success' %}green{% elif encouraging_message.type == 'warning' %}yellow{% else %}blue{% endif %}-400 text-2xl"></i>
+            </div>
+            <div class="ml-3 flex-1">
+                <h3 class="text-lg font-semibold text-gray-900">{{ encouraging_message.title }}</h3>
+                <p class="mt-1 text-sm text-gray-700">{{ encouraging_message.message }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Enhanced Stats Overview (Model Scores) -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-white overflow-hidden shadow rounded-lg border-t-4 border-red-500">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-comments text-2xl text-red-600"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Filler Score</dt>
+                            <dd class="text-lg font-medium text-gray-900">
+                                {% if latest_filler_score is not None %}
+                                    <span class="text-xl font-bold">{{ latest_filler_score }}%</span>
+                                    <span class="text-xs text-gray-500 ml-2">(Latest)</span>
+                                    {% if improvement_data and improvement_data.filler_improvement > 0 %}
+                                        <span class="text-xs text-green-600 ml-1">↓ {{ improvement_data.filler_improvement|floatformat:0 }}%</span>
+                                    {% endif %}
+                                {% elif avg_filler_score is not None %}
+                                    <span class="text-xl font-bold">{{ avg_filler_score }}%</span>
+                                    <span class="text-xs text-gray-500 ml-2">(Average)</span>
+                                    {% if improvement_data and improvement_data.filler_improvement > 0 %}
+                                        <span class="text-xs text-green-600 ml-1">↓ {{ improvement_data.filler_improvement|floatformat:0 }}%</span>
+                                    {% endif %}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </dd>
+                            <dd class="text-xs text-gray-500 mt-1">
+                                {% if latest_filler_score is not None and avg_filler_score is not None %}
+                                    Avg: {{ avg_filler_score }}% | Latest: {{ latest_filler_score }}%
+                                {% elif avg_filler_score is not None %}
+                                    Average: {{ avg_filler_score }}%
+                                {% else %}
+                                    Lower is better
+                                {% endif %}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg border-t-4 border-green-500">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-volume-up text-2xl text-green-600"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Clarity Score</dt>
+                            <dd class="text-lg font-medium text-gray-900">
+                                {% if latest_clarity_score is not None %}
+                                    <span class="text-xl font-bold">{{ latest_clarity_score }}%</span>
+                                    <span class="text-xs text-gray-500 ml-2">(Latest)</span>
+                                    {% if improvement_data and improvement_data.clarity_improvement > 0 %}
+                                        <span class="text-xs text-green-600 ml-1">↓ {{ improvement_data.clarity_improvement|floatformat:0 }}%</span>
+                                    {% endif %}
+                                {% elif avg_clarity_score is not None %}
+                                    <span class="text-xl font-bold">{{ avg_clarity_score }}%</span>
+                                    <span class="text-xs text-gray-500 ml-2">(Average)</span>
+                                    {% if improvement_data and improvement_data.clarity_improvement > 0 %}
+                                        <span class="text-xs text-green-600 ml-1">↓ {{ improvement_data.clarity_improvement|floatformat:0 }}%</span>
+                                    {% endif %}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </dd>
+                            <dd class="text-xs text-gray-500 mt-1">
+                                {% if latest_clarity_score is not None and avg_clarity_score is not None %}
+                                    Avg: {{ avg_clarity_score }}% | Latest: {{ latest_clarity_score }}%
+                                {% elif avg_clarity_score is not None %}
+                                    Average: {{ avg_clarity_score }}%
+                                {% else %}
+                                    Lower is better
+                                {% endif %}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg border-t-4 border-yellow-500">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-clock text-2xl text-yellow-600"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Pacing Score</dt>
+                            <dd class="text-lg font-medium text-gray-900">
+                                {% if latest_pacing_score is not None %}
+                                    <span class="text-xl font-bold">{{ latest_pacing_score }}%</span>
+                                    <span class="text-xs text-gray-500 ml-2">(Latest)</span>
+                                    {% if improvement_data and improvement_data.pacing_improvement > 0 %}
+                                        <span class="text-xs text-green-600 ml-1">↓ {{ improvement_data.pacing_improvement|floatformat:0 }}%</span>
+                                    {% endif %}
+                                {% elif avg_pacing_score is not None %}
+                                    <span class="text-xl font-bold">{{ avg_pacing_score }}%</span>
+                                    <span class="text-xs text-gray-500 ml-2">(Average)</span>
+                                    {% if improvement_data and improvement_data.pacing_improvement > 0 %}
+                                        <span class="text-xs text-green-600 ml-1">↓ {{ improvement_data.pacing_improvement|floatformat:0 }}%</span>
+                                    {% endif %}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </dd>
+                            <dd class="text-xs text-gray-500 mt-1">
+                                {% if latest_pacing_score is not None and avg_pacing_score is not None %}
+                                    Avg: {{ avg_pacing_score }}% | Latest: {{ latest_pacing_score }}%
+                                {% elif avg_pacing_score is not None %}
+                                    Average: {{ avg_pacing_score }}%
+                                {% else %}
+                                    Lower is better
+                                {% endif %}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg border-t-4 border-purple-500">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-dumbbell text-2xl text-purple-600"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Drill Completions</dt>
+                            <dd class="text-lg font-medium text-gray-900">{{ total_drill_completions|default:"0" }}</dd>
+                            <dd class="text-xs text-gray-500">Total practice sessions</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Recommended Drills Based on Analytics -->
+    {% if recommended_drills %}
+    <div class="bg-gradient-to-r from-purple-50 to-indigo-50 shadow rounded-lg border-2 border-purple-300">
+        <div class="px-4 py-5 sm:p-6">
+            <div class="flex items-center mb-4">
+                <i class="fas fa-lightbulb text-2xl text-purple-600 mr-3"></i>
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Recommended Drills for You</h3>
+            </div>
+            <p class="text-sm text-gray-600 mb-4">Based on your analytics, we recommend focusing on <strong>{% if worst_area == 'filler_words' %}Filler Words{% elif worst_area == 'pronunciation' %}Pronunciation{% else %}Pacing{% endif %}</strong> skills. Here are drills tailored for you:</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {% for drill in recommended_drills %}
+                <div class="bg-white rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow border-l-4 border-purple-500">
+                    <div class="flex items-start justify-between mb-2">
+                        <h4 class="text-base font-semibold text-gray-900">{{ drill.name }}</h4>
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                            {% if drill.skill_type == 'pronunciation' %}bg-blue-100 text-blue-800
+                            {% elif drill.skill_type == 'filler_words' %}bg-red-100 text-red-800
+                            {% elif drill.skill_type == 'pacing' %}bg-yellow-100 text-yellow-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ drill.get_skill_type_display }}
+                        </span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">{{ drill.description|truncatewords:20 }}</p>
+                    <a href="{% url 'coach:drill_detail' drill.id %}" class="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 transition-colors">
+                        <i class="fas fa-play mr-2"></i>
+                        Start Practice
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="mt-4 text-center">
+                <a href="{% url 'coach:drills_list' %}" class="text-purple-600 hover:text-purple-500 text-sm font-medium">
+                    View all drills →
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Activity Timeline -->
+    {% if recent_activity %}
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Recent Activity</h3>
+            <div class="space-y-4">
+                {% for activity in recent_activity %}
+                <div class="flex items-start border-l-4 {% if activity.color == 'blue' %}border-blue-400{% elif activity.color == 'green' %}border-green-400{% elif activity.color == 'purple' %}border-purple-400{% else %}border-gray-400{% endif %} pl-4 py-2">
+                    <div class="flex-shrink-0">
+                        <i class="fas {{ activity.icon }} {% if activity.color == 'blue' %}text-blue-600{% elif activity.color == 'green' %}text-green-600{% elif activity.color == 'purple' %}text-purple-600{% else %}text-gray-600{% endif %} text-lg"></i>
+                    </div>
+                    <div class="ml-4 flex-1">
+                        <h4 class="text-sm font-medium text-gray-900">{{ activity.title }}</h4>
+                        <p class="text-xs text-gray-500 mt-1">{{ activity.date|date:"M d, Y H:i" }}</p>
+                        {% if activity.type == 'feedback' and activity.data.filler_score %}
+                        <p class="text-xs text-gray-600 mt-1">
+                            Filler: {{ activity.data.filler_score|floatformat:2 }}, 
+                            Clarity: {{ activity.data.clarity_score|floatformat:2 }}, 
+                            Pacing: {{ activity.data.pacing_score|floatformat:2 }}
+                        </p>
+                        {% elif activity.type == 'session' %}
+                        <p class="text-xs text-gray-600 mt-1">
+                            Fillers: {{ activity.data.filler_count }}, Duration: {{ activity.data.duration }}s
+                            {% if activity.data.filler_score is not None %}
+                                | Scores: F:{{ activity.data.filler_score|floatformat:2 }}, C:{{ activity.data.clarity_score|floatformat:2 }}, P:{{ activity.data.pacing_score|floatformat:2 }}
+                            {% endif %}
+                        </p>
+                        {% elif activity.type == 'drill' %}
+                        <p class="text-xs text-gray-600 mt-1">Score: {{ activity.data.score|default:"N/A" }}, Duration: {{ activity.data.duration_seconds|default:"N/A" }}s</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Quick Actions -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Quick Actions</h3>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <a href="{% url 'speech_sessions:session_create' %}" class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-microphone mr-2"></i>
+                    Record Session
+                </a>
+                <a href="{% url 'coach:feedback' %}" class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-chart-line mr-2"></i>
+                    View Feedback
+                </a>
+                <a href="{% url 'speech_sessions:session_list' %}" class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-headphones mr-2"></i>
+                    All Sessions
+                </a>
+                <a href="{% url 'coach:drills_list' %}" class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <i class="fas fa-dumbbell mr-2"></i>
+                    Practice Drills
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% endblock %}

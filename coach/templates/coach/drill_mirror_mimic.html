@@ -1,0 +1,54 @@
+{% extends 'coach/drill_unified_base.html' %}
+
+{% block drill_content %}
+<div class="space-y-6">
+    <!-- Tongue Twister -->
+    <div class="bg-gradient-to-r from-green-50 to-teal-50 p-8 rounded-xl">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Tongue Twister Challenge</h3>
+        <div class="text-2xl font-medium text-gray-800 leading-relaxed mb-6" id="twister-text">
+            {% if selected_twister %}
+            "{{ selected_twister }}"
+            {% else %}
+            <span class="text-red-500">No tongue twister available. Please refresh the page.</span>
+            {% endif %}
+        </div>
+        <div class="bg-green-100 p-4 rounded-lg">
+            <p class="text-green-800 font-medium">Repeat this 3 times while focusing on clear articulation!</p>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="bg-orange-50 border-l-4 border-orange-400 p-6 rounded-lg">
+        <h3 class="text-lg font-semibold text-orange-800 mb-4">Instructions</h3>
+        <ol class="text-left text-orange-700 space-y-2">
+            <li>1. Look at the tongue twister above</li>
+            <li>2. Repeat it 3 times slowly, then 3 times quickly</li>
+            <li>3. Focus on clear articulation and mouth movements</li>
+            <li>4. Record yourself using the recording controls below</li>
+            <li>5. Review the ML analysis results</li>
+        </ol>
+    </div>
+
+    <!-- Articulation Tips -->
+    <div class="bg-blue-50 border-l-4 border-blue-400 p-6 rounded-lg">
+        <h3 class="text-lg font-semibold text-blue-800 mb-4">Articulation Tips</h3>
+        <ul class="text-left text-blue-700 space-y-2">
+            <li>• Exaggerate lip and tongue positions</li>
+            <li>• Speak slowly at first, then speed up</li>
+            <li>• Focus on each consonant sound</li>
+            <li>• Practice until you can say it clearly</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+// Drill-specific JavaScript for Mirror Mimic
+function getDrillSpecificParams() {
+    const twisterText = document.getElementById('twister-text');
+    const targetText = twisterText ? twisterText.textContent.replace(/"/g, '').trim() : '';
+    return {
+        'target_text': targetText
+    };
+}
+</script>
+{% endblock %}

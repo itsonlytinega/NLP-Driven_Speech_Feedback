@@ -1,0 +1,95 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Django
+*.log
+*.pot
+*.pyc
+db.sqlite3
+demo_db.sqlite3
+/media
+/staticfiles
+.env
+.venv
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Project specific - Exclude AI-generated MD files (except README files)
+*.md
+!README.md
+!coach/README.md
+
+# Data and models
+Datasets/
+data/cleaned/
+*.pkl
+*.pt
+*.h5
+*.ckpt
+*.pth
+*.safetensors
+coach/models/bert_speech/
+coach/models/hybrid_bert_wav2vec/
+coach/models/hybrid_bert_wav2vec_v2_20251119/
+
+# Logs
+logs/
+*.log
+
+# Reports (keep structure but exclude large files)
+reports/*.png
+reports/*.html
+
+# Media files
+media/
+
+# Static files (will be collected)
+staticfiles/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# PowerShell scripts (if not needed)
+*.ps1
+
+# Azure deployment (if sensitive)
+azure_deploy.sh
+

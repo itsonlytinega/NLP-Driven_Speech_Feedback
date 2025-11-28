@@ -1,0 +1,320 @@
+{% extends 'coach/drill_unified_base.html' %}
+{% load static %}
+
+{% block drill_content %}
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="text-center">
+        <h2 class="text-3xl font-bold text-gray-800 mb-4">Metronome Rhythm Race</h2>
+        <p class="text-lg text-gray-600 mb-6">Race against virtual opponents while maintaining perfect pacing!</p>
+    </div>
+
+    <!-- Metronome Controls -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Metronome Settings</h3>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+            {% for tempo in metronome_tempos %}
+            <button onclick="setMetronomeTempo({{ tempo }})" 
+                    class="metronome-tempo-btn px-4 py-2 border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors">
+                {{ tempo }} BPM
+            </button>
+            {% endfor %}
+        </div>
+        
+        <div class="text-center">
+            <div id="metronome-display" class="text-4xl font-bold text-blue-600 mb-4">120 BPM</div>
+            <button id="metronome-toggle" onclick="toggleMetronome()" 
+                    class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors">
+                Start Metronome
+            </button>
+        </div>
+    </div>
+
+    <!-- Race Track -->
+    <div class="bg-gradient-to-r from-green-100 to-blue-100 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Race Track</h3>
+        
+        <!-- Opponent Selection -->
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Choose Your Opponent:</label>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {% for opponent in opponent_levels %}
+                <button onclick="selectOpponent({{ forloop.counter0 }})" 
+                        class="opponent-btn px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors {% if forloop.first %}bg-blue-100 border-blue-300{% endif %}"
+                        data-speed="{{ opponent.speed }}" 
+                        data-unlock="{{ opponent.unlock_streak }}">
+                    <div class="font-semibold">{{ opponent.name }}</div>
+                    <div class="text-xs text-gray-500">Unlock: {{ opponent.unlock_streak }} streak</div>
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Race Visualization -->
+        <div class="race-track bg-white rounded-lg p-4 mb-4">
+            <div class="relative h-20">
+                <!-- User Progress -->
+                <div id="user-progress" class="absolute left-0 top-0 h-8 bg-green-500 rounded-lg transition-all duration-300 flex items-center">
+                    <span class="text-white font-semibold ml-2">You</span>
+                </div>
+                
+                <!-- Opponent Progress -->
+                <div id="opponent-progress" class="absolute left-0 top-8 h-8 bg-red-500 rounded-lg transition-all duration-300 flex items-center">
+                    <span class="text-white font-semibold ml-2" id="opponent-name">Turtle</span>
+                </div>
+                
+                <!-- Finish Line -->
+                <div class="absolute right-0 top-0 h-16 w-2 bg-yellow-400 rounded-lg flex items-center justify-center">
+                    <span class="text-xs font-bold text-gray-800 transform -rotate-90">FINISH</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- WPM Feedback -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Target WPM</div>
+                <div class="text-3xl font-bold text-blue-600">{{ target_wpm }}</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Your WPM</div>
+                <div id="current-wpm" class="text-3xl font-bold text-green-600">0</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Streak</div>
+                <div id="win-streak" class="text-3xl font-bold text-purple-600">0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recording Controls -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Speech Recording</h3>
+        <div class="text-center">
+            <button id="race-start-btn" onclick="startRace()" 
+                    class="px-8 py-4 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold text-lg transition-colors">
+                Start Race!
+            </button>
+            <div id="race-status" class="mt-4 text-lg font-semibold text-gray-600">Ready to race!</div>
+        </div>
+        
+        <!-- Audio Player -->
+        <div id="audio-player" class="mt-6 hidden">
+            <audio controls class="w-full">
+                <source src="" type="audio/wav">
+            </audio>
+        </div>
+    </div>
+
+    <!-- Feedback -->
+    <div id="feedback-container" class="bg-gray-50 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Race Feedback</h3>
+        <div id="feedback-buttons"></div>
+    </div>
+</div>
+
+<script>
+// Drill-specific JavaScript
+function getDrillSpecificParams() {
+    // Override this function in individual drill templates if needed
+    return {};
+}
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/drills.js' %}"></script>
+<script>
+    let metronomeInterval = null;
+    let currentTempo = 120;
+    let selectedOpponent = 0;
+    let raceActive = false;
+    let userProgress = 0;
+    let opponentProgress = 0;
+    let winStreak = 0;
+    let wordCount = 0;
+    let raceStartTime = null;
+
+    // Metronome functionality
+    function setMetronomeTempo(tempo) {
+        currentTempo = tempo;
+        document.getElementById('metronome-display').textContent = tempo + ' BPM';
+        
+        // Update button styles
+        document.querySelectorAll('.metronome-tempo-btn').forEach(btn => {
+            btn.classList.remove('bg-blue-100', 'border-blue-300');
+        });
+        event.target.classList.add('bg-blue-100', 'border-blue-300');
+    }
+
+    function toggleMetronome() {
+        const btn = document.getElementById('metronome-toggle');
+        
+        if (metronomeInterval) {
+            clearInterval(metronomeInterval);
+            metronomeInterval = null;
+            btn.textContent = 'Start Metronome';
+            btn.classList.remove('bg-red-500', 'hover:bg-red-600');
+            btn.classList.add('bg-blue-500', 'hover:bg-blue-600');
+        } else {
+            const interval = 60000 / currentTempo; // Convert BPM to milliseconds
+            metronomeInterval = setInterval(() => {
+                // Visual metronome tick
+                document.getElementById('metronome-display').classList.add('scale-110', 'text-red-600');
+                setTimeout(() => {
+                    document.getElementById('metronome-display').classList.remove('scale-110', 'text-red-600');
+                }, 100);
+                
+                // Audio tick (if Web Audio API is available)
+                if (window.AudioContext || window.webkitAudioContext) {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.1);
+                }
+            }, interval);
+            
+            btn.textContent = 'Stop Metronome';
+            btn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+            btn.classList.add('bg-red-500', 'hover:bg-red-600');
+        }
+    }
+
+    function selectOpponent(index) {
+        selectedOpponent = index;
+        const opponents = {{ opponent_levels|safe }};
+        const opponent = opponents[index];
+        
+        // Update button styles
+        document.querySelectorAll('.opponent-btn').forEach(btn => {
+            btn.classList.remove('bg-blue-100', 'border-blue-300');
+        });
+        event.target.classList.add('bg-blue-100', 'border-blue-300');
+        
+        document.getElementById('opponent-name').textContent = opponent.name;
+    }
+
+    function startRace() {
+        if (raceActive) return;
+        
+        raceActive = true;
+        raceStartTime = Date.now();
+        wordCount = 0;
+        userProgress = 0;
+        opponentProgress = 0;
+        
+        document.getElementById('race-start-btn').textContent = 'Race in Progress...';
+        document.getElementById('race-start-btn').disabled = true;
+        document.getElementById('race-status').textContent = 'Speak now! Maintain your pace!';
+        
+        // Start opponent movement
+        const opponents = {{ opponent_levels|safe }};
+        const opponent = opponents[selectedOpponent];
+        const opponentSpeed = opponent.speed;
+        
+        const raceInterval = setInterval(() => {
+            if (!raceActive) {
+                clearInterval(raceInterval);
+                return;
+            }
+            
+            // Update opponent progress
+            opponentProgress += opponentSpeed * 2;
+            document.getElementById('opponent-progress').style.width = Math.min(opponentProgress, 95) + '%';
+            
+            // Check for race end
+            if (opponentProgress >= 95 || userProgress >= 95) {
+                endRace();
+                clearInterval(raceInterval);
+            }
+        }, 100);
+        
+        // Start microphone recording
+        drillComponents.startMic({
+            onStart: function() {
+                console.log('Race recording started');
+            },
+            onStop: function(audioBlob, audioUrl) {
+                // Calculate WPM
+                const duration = (Date.now() - raceStartTime) / 1000 / 60; // minutes
+                const wpm = wordCount / duration;
+                document.getElementById('current-wpm').textContent = Math.round(wpm);
+                
+                // Update user progress based on WPM accuracy
+                const targetWPM = {{ target_wpm }};
+                const accuracy = Math.min(wpm / targetWPM, 1.5);
+                userProgress += accuracy * 10;
+                document.getElementById('user-progress').style.width = Math.min(userProgress, 95) + '%';
+                
+                // Show audio playback
+                const audioPlayer = document.getElementById('audio-player');
+                audioPlayer.querySelector('audio').src = audioUrl;
+                audioPlayer.classList.remove('hidden');
+                
+                // Show feedback buttons
+                drillComponents.showFeedback('feedback-buttons', function(rating) {
+                    console.log('Race feedback:', rating);
+                });
+            },
+            onError: function(error) {
+                alert('Error accessing microphone: ' + error.message);
+                endRace();
+            }
+        });
+    }
+
+    function endRace() {
+        raceActive = false;
+        
+        // Determine winner
+        const userWon = userProgress > opponentProgress;
+        if (userWon) {
+            winStreak++;
+            document.getElementById('win-streak').textContent = winStreak;
+            document.getElementById('race-status').textContent = 'You won! Great pacing!';
+            document.getElementById('race-status').classList.add('text-green-600');
+        } else {
+            winStreak = 0;
+            document.getElementById('win-streak').textContent = winStreak;
+            document.getElementById('race-status').textContent = 'Opponent won! Try again!';
+            document.getElementById('race-status').classList.add('text-red-600');
+        }
+        
+        document.getElementById('race-start-btn').textContent = 'Start New Race';
+        document.getElementById('race-start-btn').disabled = false;
+        
+        // Reset progress bars
+        setTimeout(() => {
+            userProgress = 0;
+            opponentProgress = 0;
+            document.getElementById('user-progress').style.width = '0%';
+            document.getElementById('opponent-progress').style.width = '0%';
+            document.getElementById('race-status').textContent = 'Ready to race!';
+            document.getElementById('race-status').classList.remove('text-green-600', 'text-red-600');
+        }, 3000);
+    }
+
+    // Word counting simulation (in real implementation, this would use speech recognition)
+    function simulateWordCount() {
+        if (raceActive) {
+            wordCount += Math.random() * 3; // Simulate word detection
+            setTimeout(simulateWordCount, 1000);
+        }
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set default opponent
+        selectOpponent(0);
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,388 @@
+{% extends 'coach/drill_unified_base.html' %}
+{% load static %}
+
+{% block drill_content %}
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="text-center">
+        <h2 class="text-3xl font-bold text-gray-800 mb-4">Beat Drop Dialogue</h2>
+        <p class="text-lg text-gray-600 mb-6">Sync your speech to rhythmic beats and master dramatic pauses!</p>
+    </div>
+
+    <!-- Beat Controls -->
+    <div class="bg-gradient-to-r from-purple-100 to-indigo-100 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Beat Pattern Control</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Beat Pattern Selection -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Beat Pattern</label>
+                <div class="grid grid-cols-2 gap-2">
+                    {% for pattern in beat_patterns %}
+                    <button onclick="selectPattern('{{ pattern.name }}')" 
+                            class="pattern-btn px-4 py-3 border border-gray-300 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition-colors {% if forloop.first %}bg-purple-100 border-purple-300{% endif %}">
+                        <div class="font-semibold">{{ pattern.name }}</div>
+                        <div class="text-sm text-gray-600">{{ pattern.description }}</div>
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- BPM Control -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Beats Per Minute (BPM)</label>
+                <div class="flex items-center space-x-4">
+                    <span class="text-sm text-gray-500">60</span>
+                    <input type="range" id="bpm-slider" min="60" max="180" step="10" value="120" 
+                           class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                           oninput="updateBPM(this.value)">
+                    <span class="text-sm text-gray-500">180</span>
+                </div>
+                <div class="text-center mt-2">
+                    <span id="current-bpm" class="text-2xl font-bold text-purple-600">120</span>
+                    <span class="text-sm text-gray-600">BPM</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Beat Controls -->
+        <div class="text-center mt-6">
+            <button id="beat-play-btn" onclick="toggleBeat()" 
+                    class="px-8 py-4 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold text-lg transition-colors">
+                🎵 Start Beat
+            </button>
+            <div id="beat-status" class="mt-4 text-lg font-semibold text-gray-600">Ready to drop beats!</div>
+        </div>
+    </div>
+
+    <!-- Dialogue Prompt -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Dialogue Challenge</h3>
+        
+        <div class="bg-gradient-to-r from-blue-50 to-green-50 rounded-lg p-6 mb-6">
+            <h4 class="text-lg font-bold text-blue-800 mb-3">{{ selected_dialogue.title }}</h4>
+            <p class="text-gray-700 text-lg leading-relaxed mb-4">{{ selected_dialogue.dialogue }}</p>
+            
+            <!-- Beat Drop Indicators -->
+            <div class="mt-4">
+                <h5 class="font-semibold text-gray-700 mb-2">Beat Drop Points:</h5>
+                <div id="drop-points" class="space-y-2">
+                    {% for point in selected_dialogue.drop_points %}
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                        <span class="text-sm text-gray-600">{{ point }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- New Dialogue Button -->
+        <div class="text-center">
+            <button onclick="loadNewDialogue()" 
+                    class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors">
+                🎭 New Dialogue Challenge
+            </button>
+        </div>
+    </div>
+
+    <!-- Recording Section -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Beat-Synced Recording</h3>
+        
+        <div class="text-center">
+            <button id="record-btn" onclick="startBeatRecording()" 
+                    class="px-8 py-4 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold text-lg transition-colors">
+                🎤 Start Beat Recording
+            </button>
+            <div id="recording-status" class="mt-4 text-lg font-semibold text-gray-600">Ready to sync with beats!</div>
+        </div>
+        
+        <!-- Audio Player -->
+        <div id="audio-player" class="mt-6 hidden">
+            <audio controls class="w-full" id="dialogue-audio">
+                <source src="" type="audio/wav">
+            </audio>
+        </div>
+    </div>
+
+    <!-- Beat Visualization -->
+    <div class="bg-gradient-to-r from-indigo-100 to-purple-100 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Beat Visualization</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Beat Sync Score</div>
+                <div id="sync-score" class="text-3xl font-bold text-green-600">0%</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Drop Hits</div>
+                <div id="drop-hits" class="text-3xl font-bold text-red-600">0</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Perfect Timing</div>
+                <div id="perfect-timing" class="text-3xl font-bold text-purple-600">0</div>
+            </div>
+        </div>
+        
+        <!-- Beat Meter -->
+        <div class="mt-6">
+            <div class="flex justify-center space-x-2" id="beat-meter">
+                <!-- Beat indicators will be generated here -->
+            </div>
+        </div>
+        
+        <!-- Beat Tips -->
+        <div class="mt-6 bg-white rounded-lg p-4">
+            <h4 class="font-semibold text-gray-700 mb-2">Beat Sync Tips:</h4>
+            <ul class="text-sm text-gray-600 space-y-1">
+                <li>• Listen for the beat pattern and sync your speech rhythm</li>
+                <li>• Use dramatic pauses on beat drops for maximum impact</li>
+                <li>• Practice speaking in time with the musical rhythm</li>
+                <li>• Focus on timing rather than speed - rhythm is key</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Feedback -->
+    <div id="feedback-container" class="bg-gray-50 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Beat Sync Feedback</h3>
+        <div id="feedback-buttons"></div>
+    </div>
+</div>
+
+<script>
+// Drill-specific JavaScript
+function getDrillSpecificParams() {
+    // Override this function in individual drill templates if needed
+    return {};
+}
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/drills.js' %}"></script>
+<script>
+    let beatActive = false;
+    let beatPattern = null;
+    let currentBPM = 120;
+    let syncScore = 0;
+    let dropHits = 0;
+    let perfectTiming = 0;
+    let recordingActive = false;
+
+    const dialogue = {{ selected_dialogue|safe }};
+    const patterns = {{ beat_patterns|safe }};
+
+    function selectPattern(patternName) {
+        beatPattern = patterns.find(p => p.name === patternName);
+        
+        // Update button styles
+        document.querySelectorAll('.pattern-btn').forEach(btn => {
+            btn.classList.remove('bg-purple-100', 'border-purple-300');
+        });
+        event.target.classList.add('bg-purple-100', 'border-purple-300');
+        
+        console.log('Selected pattern:', beatPattern);
+    }
+
+    function updateBPM(bpm) {
+        currentBPM = parseInt(bpm);
+        document.getElementById('current-bpm').textContent = currentBPM;
+        
+        // Update beat pattern if active
+        if (beatActive && beatPattern) {
+            stopBeat();
+            startBeat();
+        }
+    }
+
+    function toggleBeat() {
+        if (beatActive) {
+            stopBeat();
+        } else {
+            startBeat();
+        }
+    }
+
+    function startBeat() {
+        if (!beatPattern) {
+            alert('Please select a beat pattern first!');
+            return;
+        }
+        
+        beatActive = true;
+        document.getElementById('beat-play-btn').textContent = '⏹️ Stop Beat';
+        document.getElementById('beat-status').textContent = 'Beats playing...';
+        
+        // Create beat pattern using Web Audio API
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const beatPatternObj = drillComponents.createBeatPattern(audioContext, beatPattern.pattern, currentBPM);
+        
+        beatPatternObj.start();
+        
+        // Store reference for stopping
+        window.currentBeatPattern = beatPatternObj;
+        
+        // Create visual beat meter
+        createBeatMeter();
+    }
+
+    function stopBeat() {
+        beatActive = false;
+        document.getElementById('beat-play-btn').textContent = '🎵 Start Beat';
+        document.getElementById('beat-status').textContent = 'Beats stopped';
+        
+        if (window.currentBeatPattern) {
+            window.currentBeatPattern.stop();
+        }
+    }
+
+    function createBeatMeter() {
+        const meter = document.getElementById('beat-meter');
+        meter.innerHTML = '';
+        
+        const patternLength = beatPattern.pattern.length;
+        for (let i = 0; i < patternLength; i++) {
+            const indicator = document.createElement('div');
+            indicator.className = 'w-4 h-4 rounded-full bg-gray-300';
+            indicator.id = `beat-${i}`;
+            meter.appendChild(indicator);
+        }
+        
+        // Animate beat meter
+        animateBeatMeter();
+    }
+
+    function animateBeatMeter() {
+        if (!beatActive) return;
+        
+        const patternLength = beatPattern.pattern.length;
+        let currentBeat = 0;
+        
+        const beatInterval = setInterval(() => {
+            if (!beatActive) {
+                clearInterval(beatInterval);
+                return;
+            }
+            
+            // Reset all indicators
+            for (let i = 0; i < patternLength; i++) {
+                const indicator = document.getElementById(`beat-${i}`);
+                if (indicator) {
+                    indicator.className = 'w-4 h-4 rounded-full bg-gray-300';
+                }
+            }
+            
+            // Highlight current beat
+            const currentIndicator = document.getElementById(`beat-${currentBeat}`);
+            if (currentIndicator) {
+                if (beatPattern.pattern[currentBeat]) {
+                    currentIndicator.className = 'w-4 h-4 rounded-full bg-red-500 animate-pulse';
+                } else {
+                    currentIndicator.className = 'w-4 h-4 rounded-full bg-blue-500';
+                }
+            }
+            
+            currentBeat = (currentBeat + 1) % patternLength;
+        }, 60000 / (currentBPM * patternLength / 4));
+    }
+
+    function loadNewDialogue() {
+        // Simulate loading new dialogue
+        const newDialogue = {
+            title: "New Challenge",
+            dialogue: "This is a new dialogue challenge for you to practice with beats.",
+            drop_points: ["After 'challenge'", "Before 'practice'", "At the end"]
+        };
+        
+        // Update display
+        document.querySelector('.text-blue-800').textContent = newDialogue.title;
+        document.querySelector('.text-gray-700').textContent = newDialogue.dialogue;
+        
+        const dropPoints = document.getElementById('drop-points');
+        dropPoints.innerHTML = newDialogue.drop_points.map(point => `
+            <div class="flex items-center space-x-2">
+                <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                <span class="text-sm text-gray-600">${point}</span>
+            </div>
+        `).join('');
+        
+        // Reset scores
+        syncScore = 0;
+        dropHits = 0;
+        perfectTiming = 0;
+        updateScores();
+    }
+
+    function startBeatRecording() {
+        if (recordingActive) return;
+        
+        if (!beatActive) {
+            alert('Please start the beat first!');
+            return;
+        }
+        
+        recordingActive = true;
+        document.getElementById('record-btn').textContent = 'Recording...';
+        document.getElementById('record-btn').disabled = true;
+        document.getElementById('recording-status').textContent = 'Recording with beat sync...';
+        
+        drillComponents.startMic({
+            onStart: function() {
+                console.log('Beat-synced recording started');
+            },
+            onStop: function(audioBlob, audioUrl) {
+                recordingActive = false;
+                document.getElementById('record-btn').textContent = '🎤 Start Beat Recording';
+                document.getElementById('record-btn').disabled = false;
+                document.getElementById('recording-status').textContent = 'Recording complete!';
+                
+                // Show audio playback
+                const audioPlayer = document.getElementById('audio-player');
+                const audio = document.getElementById('dialogue-audio');
+                audio.src = audioUrl;
+                audioPlayer.classList.remove('hidden');
+                
+                // Simulate beat sync analysis
+                simulateBeatSyncAnalysis();
+                
+                // Show feedback buttons
+                drillComponents.showFeedback('feedback-buttons', function(rating) {
+                    console.log('Beat sync feedback:', rating);
+                });
+            },
+            onError: function(error) {
+                alert('Error accessing microphone: ' + error.message);
+                recordingActive = false;
+                document.getElementById('record-btn').textContent = '🎤 Start Beat Recording';
+                document.getElementById('record-btn').disabled = false;
+            }
+        });
+    }
+
+    function simulateBeatSyncAnalysis() {
+        // Simulate analysis results
+        syncScore = Math.floor(Math.random() * 40) + 60; // 60-100%
+        dropHits = Math.floor(Math.random() * 3) + 1; // 1-3 hits
+        perfectTiming = Math.floor(Math.random() * 5) + 1; // 1-5 perfect timings
+        
+        updateScores();
+    }
+
+    function updateScores() {
+        document.getElementById('sync-score').textContent = syncScore + '%';
+        document.getElementById('drop-hits').textContent = dropHits;
+        document.getElementById('perfect-timing').textContent = perfectTiming;
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        // Select first pattern by default
+        if (patterns.length > 0) {
+            selectPattern(patterns[0].name);
+        }
+        updateScores();
+    });
+</script>
+{% endblock %}

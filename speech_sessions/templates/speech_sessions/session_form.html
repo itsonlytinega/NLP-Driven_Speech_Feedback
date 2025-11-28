@@ -1,0 +1,659 @@
+{% extends 'coach/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - Verbal Coach{% endblock %}
+
+{% block extra_css %}
+<style>
+    .recording-indicator {
+        animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    .recording-panel {
+        border: 2px solid #ef4444;
+        background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    }
+    .waveform-container {
+        height: 100px;
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 8px;
+        position: relative;
+        overflow: hidden;
+    }
+    .waveform-canvas {
+        width: 100%;
+        height: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <div class="flex items-center">
+            <a href="{% url 'speech_sessions:session_list' %}" 
+               class="mr-4 text-gray-400 hover:text-gray-600">
+                <i class="fas fa-arrow-left text-xl"></i>
+            </a>
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">{{ title }}</h1>
+                <p class="mt-2 text-sm text-gray-700">
+                    {% if session %}
+                        Update the details of your speech session.
+                    {% else %}
+                        Create a new speech session by uploading an audio file or recording directly from your browser.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Container -->
+    <div class="max-w-2xl">
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <form method="post" enctype="multipart/form-data" class="space-y-6" id="session-form">
+                    {% csrf_token %}
+                    
+                    <!-- Audio Recording/Upload Section (only for create) -->
+                    {% if not session %}
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-3">
+                                Audio Source <span class="text-red-500">*</span>
+                            </label>
+                            
+                            <!-- Tabs for Upload vs Record -->
+                            <div class="flex border-b border-gray-200 mb-4">
+                                <button type="button" id="upload-tab" class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300 focus:outline-none active-tab">
+                                    <i class="fas fa-upload mr-2"></i>Upload File
+                                </button>
+                                <button type="button" id="record-tab" class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300 focus:outline-none">
+                                    <i class="fas fa-microphone mr-2"></i>Record Now
+                                </button>
+                            </div>
+                            
+                            <!-- Upload Tab Content -->
+                            <div id="upload-panel" class="tab-content">
+                                <label for="{{ form.audio_file.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Audio File
+                                </label>
+                                <div class="mt-1">
+                                    {{ form.audio_file }}
+                                </div>
+                                {% if form.audio_file.errors %}
+                                    <div class="mt-2 text-sm text-red-600">
+                                        {% for error in form.audio_file.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                {% if form.audio_file.help_text %}
+                                    <p class="mt-2 text-sm text-gray-500">{{ form.audio_file.help_text }}</p>
+                                {% endif %}
+                                <div class="mt-2 text-sm text-gray-500">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Upload an audio file (MP3, WAV, M4A, OGG, or FLAC). Duration will be automatically calculated.
+                                </div>
+                                <div id="upload-duration" class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md hidden">
+                                    <p class="text-sm text-blue-800">
+                                        <i class="fas fa-clock mr-1"></i>
+                                        Duration: <span id="duration-display" class="font-semibold">0</span> seconds
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <!-- Record Tab Content -->
+                            <div id="record-panel" class="tab-content hidden">
+                                <div class="recording-panel rounded-lg p-6">
+                                    <div class="text-center mb-4">
+                                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Record Your Speech</h3>
+                                        <p class="text-sm text-gray-600">Click the button below to start recording from your microphone</p>
+                                    </div>
+                                    
+                                    <!-- Recording Controls -->
+                                    <div class="flex flex-col items-center space-y-4">
+                                        <div id="recording-status" class="hidden">
+                                            <div class="flex items-center space-x-3 mb-4">
+                                                <div class="w-4 h-4 bg-red-500 rounded-full recording-indicator"></div>
+                                                <span class="text-sm font-medium text-gray-700">Recording...</span>
+                                                <span id="recording-timer" class="text-sm font-bold text-gray-900">0:00</span>
+                                            </div>
+                                            
+                                            <!-- Waveform Visualization -->
+                                            <div class="waveform-container mb-4">
+                                                <canvas id="waveform-canvas" class="waveform-canvas"></canvas>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="flex space-x-3">
+                                            <button type="button" id="start-record-btn" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                                <i class="fas fa-microphone mr-2"></i>
+                                                Start Recording
+                                            </button>
+                                            <button type="button" id="stop-record-btn" class="hidden inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                                                <i class="fas fa-stop mr-2"></i>
+                                                Stop Recording
+                                            </button>
+                                            <button type="button" id="reset-record-btn" class="hidden inline-flex items-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                                <i class="fas fa-redo mr-2"></i>
+                                                Reset
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Recorded Audio Preview -->
+                                        <div id="recorded-audio-preview" class="hidden w-full mt-4">
+                                            <p class="text-sm font-medium text-gray-700 mb-2">Recorded Audio:</p>
+                                            <audio id="recorded-audio-player" controls class="w-full"></audio>
+                                            <p class="text-xs text-gray-500 mt-2">
+                                                <i class="fas fa-info-circle mr-1"></i>
+                                                Duration: <span id="recorded-duration" class="font-semibold">0</span> seconds
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Hidden input for recorded audio -->
+                                <input type="hidden" name="recorded_audio" id="recorded-audio-input" value="">
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Transcription Field -->
+                    <div>
+                        <label for="{{ form.transcription.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            Transcription
+                        </label>
+                        <div class="mt-1">
+                            {{ form.transcription }}
+                        </div>
+                        {% if form.transcription.errors %}
+                            <div class="mt-2 text-sm text-red-600">
+                                {% for error in form.transcription.errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if form.transcription.help_text %}
+                            <p class="mt-2 text-sm text-gray-500">{{ form.transcription.help_text }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Update-specific fields -->
+                    {% if session %}
+                    <div class="border-t border-gray-200 pt-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Analysis Details</h3>
+                        
+                        <!-- Filler Count -->
+                        <div class="mb-4">
+                            <label for="{{ form.filler_count.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Filler Word Count
+                            </label>
+                            <div class="mt-1">
+                                {{ form.filler_count }}
+                            </div>
+                            {% if form.filler_count.errors %}
+                                <div class="mt-2 text-sm text-red-600">
+                                    {% for error in form.filler_count.errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Pacing Analysis -->
+                        <div class="mb-4">
+                            <label for="{{ form.pacing_analysis.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Pacing Analysis
+                            </label>
+                            <div class="mt-1">
+                                {{ form.pacing_analysis }}
+                            </div>
+                            {% if form.pacing_analysis.errors %}
+                                <div class="mt-2 text-sm text-red-600">
+                                    {% for error in form.pacing_analysis.errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Status -->
+                        <div class="mb-4">
+                            <label for="{{ form.status.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Status
+                            </label>
+                            <div class="mt-1">
+                                {{ form.status }}
+                            </div>
+                            {% if form.status.errors %}
+                                <div class="mt-2 text-sm text-red-600">
+                                    {% for error in form.status.errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Confidence Score -->
+                        <div class="mb-4">
+                            <label for="{{ form.confidence_score.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                                Confidence Score (0.0 - 1.0)
+                            </label>
+                            <div class="mt-1">
+                                {{ form.confidence_score }}
+                            </div>
+                            {% if form.confidence_score.errors %}
+                                <div class="mt-2 text-sm text-red-600">
+                                    {% for error in form.confidence_score.errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Form Actions -->
+                    <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+                        <a href="{% url 'speech_sessions:session_list' %}" 
+                           class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Cancel
+                        </a>
+                        <button type="submit" 
+                                class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <i class="fas fa-save mr-2"></i>{{ submit_text }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Help Text -->
+        {% if not session %}
+        <div class="mt-6 bg-blue-50 border border-blue-200 rounded-md p-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-info-circle text-blue-400"></i>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-blue-800">
+                        Getting Started
+                    </h3>
+                    <div class="mt-2 text-sm text-blue-700">
+                        <ul class="list-disc list-inside space-y-1">
+                            <li>Upload an audio file or record directly from your browser</li>
+                            <li>Duration will be automatically calculated from the audio</li>
+                            <li>Optionally provide a transcription for better analysis</li>
+                            <li>The system will automatically analyze your speech patterns using AI models</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tab switching
+    const uploadTab = document.getElementById('upload-tab');
+    const recordTab = document.getElementById('record-tab');
+    const uploadPanel = document.getElementById('upload-panel');
+    const recordPanel = document.getElementById('record-panel');
+    
+    if (uploadTab && recordTab && uploadPanel && recordPanel) {
+        uploadTab.addEventListener('click', function() {
+            uploadTab.classList.add('active-tab', 'border-indigo-500', 'text-indigo-600');
+            uploadTab.classList.remove('border-transparent', 'text-gray-500');
+            recordTab.classList.remove('active-tab', 'border-indigo-500', 'text-indigo-600');
+            recordTab.classList.add('border-transparent', 'text-gray-500');
+            uploadPanel.classList.remove('hidden');
+            recordPanel.classList.add('hidden');
+        });
+        
+        recordTab.addEventListener('click', function() {
+            recordTab.classList.add('active-tab', 'border-indigo-500', 'text-indigo-600');
+            recordTab.classList.remove('border-transparent', 'text-gray-500');
+            uploadTab.classList.remove('active-tab', 'border-indigo-500', 'text-indigo-600');
+            uploadTab.classList.add('border-transparent', 'text-gray-500');
+            recordPanel.classList.remove('hidden');
+            uploadPanel.classList.add('hidden');
+        });
+    }
+    
+    // Recording state
+    const RecordingState = {
+        isRecording: false,
+        mediaRecorder: null,
+        audioChunks: [],
+        stream: null,
+        startTime: null,
+        timerInterval: null,
+        audioContext: null,
+        analyser: null,
+        animationFrame: null,
+    };
+    
+    // Recording controls
+    const startRecordBtn = document.getElementById('start-record-btn');
+    const stopRecordBtn = document.getElementById('stop-record-btn');
+    const resetRecordBtn = document.getElementById('reset-record-btn');
+    const recordingStatus = document.getElementById('recording-status');
+    const recordingTimer = document.getElementById('recording-timer');
+    const recordedAudioPreview = document.getElementById('recorded-audio-preview');
+    const recordedAudioPlayer = document.getElementById('recorded-audio-player');
+    const recordedAudioInput = document.getElementById('recorded-audio-input');
+    const recordedDuration = document.getElementById('recorded-duration');
+    const waveformCanvas = document.getElementById('waveform-canvas');
+    
+    // Start recording
+    if (startRecordBtn) {
+        startRecordBtn.addEventListener('click', async function() {
+            try {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    alert('Microphone access is not available in your browser.');
+                    return;
+                }
+                
+                // Request microphone access
+                RecordingState.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                
+                // Initialize MediaRecorder
+                RecordingState.audioChunks = [];
+                RecordingState.mediaRecorder = new MediaRecorder(RecordingState.stream, {
+                    mimeType: 'audio/webm;codecs=opus'
+                });
+                
+                RecordingState.mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        RecordingState.audioChunks.push(event.data);
+                    }
+                };
+                
+                RecordingState.mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(RecordingState.audioChunks, { type: 'audio/webm' });
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    
+                    // Convert to WAV format for server (or send as WebM, server will handle conversion)
+                    convertToWAV(audioBlob).then(wavBlob => {
+                        // Convert blob to base64
+                        const reader = new FileReader();
+                        reader.readAsDataURL(wavBlob);
+                        reader.onloadend = function() {
+                            const base64Audio = reader.result;
+                            recordedAudioInput.value = base64Audio;
+                            
+                            // Show preview
+                            recordedAudioPlayer.src = audioUrl;
+                            recordedAudioPreview.classList.remove('hidden');
+                            
+                            // Calculate duration
+                            const audio = new Audio(audioUrl);
+                            audio.addEventListener('loadedmetadata', function() {
+                                if (audio.duration && !isNaN(audio.duration)) {
+                                    recordedDuration.textContent = Math.round(audio.duration);
+                                }
+                            });
+                        };
+                    }).catch(error => {
+                        console.error('Error converting to WAV:', error);
+                        // Fallback: send as WebM, server will handle conversion
+                        const reader = new FileReader();
+                        reader.readAsDataURL(audioBlob);
+                        reader.onloadend = function() {
+                            recordedAudioInput.value = reader.result;
+                            recordedAudioPlayer.src = audioUrl;
+                            recordedAudioPreview.classList.remove('hidden');
+                            const audio = new Audio(audioUrl);
+                            audio.addEventListener('loadedmetadata', function() {
+                                if (audio.duration && !isNaN(audio.duration)) {
+                                    recordedDuration.textContent = Math.round(audio.duration);
+                                }
+                            });
+                        };
+                    });
+                    
+                    // Stop stream
+                    if (RecordingState.stream) {
+                        RecordingState.stream.getTracks().forEach(track => track.stop());
+                    }
+                    
+                    // Clean up audio context
+                    if (RecordingState.audioContext) {
+                        RecordingState.audioContext.close();
+                    }
+                };
+                
+                // Start recording
+                RecordingState.mediaRecorder.start();
+                RecordingState.isRecording = true;
+                RecordingState.startTime = Date.now();
+                
+                // Update UI
+                startRecordBtn.classList.add('hidden');
+                stopRecordBtn.classList.remove('hidden');
+                recordingStatus.classList.remove('hidden');
+                
+                // Start timer
+                startRecordingTimer();
+                
+                // Initialize audio context for waveform
+                RecordingState.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                RecordingState.analyser = RecordingState.audioContext.createAnalyser();
+                const source = RecordingState.audioContext.createMediaStreamSource(RecordingState.stream);
+                source.connect(RecordingState.analyser);
+                RecordingState.analyser.fftSize = 256;
+                
+                // Start waveform visualization
+                startWaveformVisualization();
+                
+                console.log('✅ Recording started');
+            } catch (error) {
+                console.error('Error starting recording:', error);
+                alert('Error accessing microphone: ' + error.message);
+            }
+        });
+    }
+    
+    // Stop recording
+    if (stopRecordBtn) {
+        stopRecordBtn.addEventListener('click', function() {
+            if (RecordingState.mediaRecorder && RecordingState.isRecording) {
+                RecordingState.mediaRecorder.stop();
+                RecordingState.isRecording = false;
+                
+                // Stop timer
+                if (RecordingState.timerInterval) {
+                    clearInterval(RecordingState.timerInterval);
+                    RecordingState.timerInterval = null;
+                }
+                
+                // Stop waveform
+                if (RecordingState.animationFrame) {
+                    cancelAnimationFrame(RecordingState.animationFrame);
+                }
+                
+                // Update UI
+                startRecordBtn.classList.remove('hidden');
+                stopRecordBtn.classList.add('hidden');
+                resetRecordBtn.classList.remove('hidden');
+                recordingStatus.classList.add('hidden');
+                
+                console.log('✅ Recording stopped');
+            }
+        });
+    }
+    
+    // Reset recording
+    if (resetRecordBtn) {
+        resetRecordBtn.addEventListener('click', function() {
+            // Clear recorded audio
+            recordedAudioInput.value = '';
+            recordedAudioPlayer.src = '';
+            recordedAudioPreview.classList.add('hidden');
+            
+            // Reset UI
+            startRecordBtn.classList.remove('hidden');
+            stopRecordBtn.classList.add('hidden');
+            resetRecordBtn.classList.add('hidden');
+            recordingStatus.classList.add('hidden');
+            
+            // Clean up
+            if (RecordingState.stream) {
+                RecordingState.stream.getTracks().forEach(track => track.stop());
+            }
+            if (RecordingState.audioContext) {
+                RecordingState.audioContext.close();
+            }
+            if (RecordingState.timerInterval) {
+                clearInterval(RecordingState.timerInterval);
+            }
+            if (RecordingState.animationFrame) {
+                cancelAnimationFrame(RecordingState.animationFrame);
+            }
+            
+            RecordingState.isRecording = false;
+            RecordingState.audioChunks = [];
+            RecordingState.stream = null;
+            RecordingState.audioContext = null;
+            
+            console.log('✅ Recording reset');
+        });
+    }
+    
+    // Recording timer
+    function startRecordingTimer() {
+        if (RecordingState.timerInterval) {
+            clearInterval(RecordingState.timerInterval);
+        }
+        
+        RecordingState.timerInterval = setInterval(() => {
+            if (!RecordingState.isRecording) return;
+            
+            const elapsed = Math.floor((Date.now() - RecordingState.startTime) / 1000);
+            const mins = Math.floor(elapsed / 60);
+            const secs = elapsed % 60;
+            
+            if (recordingTimer) {
+                recordingTimer.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+            }
+        }, 100);
+    }
+    
+    // Waveform visualization
+    function startWaveformVisualization() {
+        if (!waveformCanvas || !RecordingState.analyser) return;
+        
+        const ctx = waveformCanvas.getContext('2d');
+        if (!ctx) return;
+        
+        // Set canvas size
+        waveformCanvas.width = waveformCanvas.offsetWidth || 800;
+        waveformCanvas.height = waveformCanvas.offsetHeight || 100;
+        
+        const dataArray = new Uint8Array(RecordingState.analyser.frequencyBinCount);
+        
+        function draw() {
+            if (!RecordingState.isRecording || !RecordingState.analyser) return;
+            
+            RecordingState.animationFrame = requestAnimationFrame(draw);
+            
+            try {
+                RecordingState.analyser.getByteFrequencyData(dataArray);
+                
+                // Clear canvas
+                ctx.fillStyle = 'rgba(239, 68, 68, 0.1)';
+                ctx.fillRect(0, 0, waveformCanvas.width, waveformCanvas.height);
+                
+                // Draw waveform bars
+                const barWidth = (waveformCanvas.width / dataArray.length) * 2.5;
+                let x = 0;
+                
+                for (let i = 0; i < dataArray.length; i++) {
+                    const barHeight = (dataArray[i] / 255) * waveformCanvas.height;
+                    
+                    // Color based on volume
+                    if (barHeight > waveformCanvas.height * 0.7) {
+                        ctx.fillStyle = '#ef4444'; // Red for loud
+                    } else if (barHeight > waveformCanvas.height * 0.4) {
+                        ctx.fillStyle = '#f59e0b'; // Orange for medium
+                    } else {
+                        ctx.fillStyle = '#3b82f6'; // Blue for quiet
+                    }
+                    
+                    ctx.fillRect(x, waveformCanvas.height - barHeight, barWidth, barHeight);
+                    x += barWidth + 1;
+                }
+            } catch (error) {
+                console.error('Error drawing waveform:', error);
+            }
+        }
+        
+        draw();
+    }
+    
+    // Convert WebM to WAV (simplified - in production, use a proper converter library)
+    async function convertToWAV(webmBlob) {
+        // For now, return the blob as-is
+        // In production, you might want to use a library like 'webm-wav' or handle conversion server-side
+        // The server can handle WebM format with ffmpeg
+        return webmBlob;
+    }
+    
+    // Auto-calculate duration from uploaded audio file
+    const audioFileInput = document.querySelector('input[type="file"][name="audio_file"]');
+    const uploadDuration = document.getElementById('upload-duration');
+    const durationDisplay = document.getElementById('duration-display');
+    
+    if (audioFileInput && uploadDuration && durationDisplay) {
+        audioFileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('audio/')) {
+                const audio = new Audio();
+                audio.src = URL.createObjectURL(file);
+                
+                audio.addEventListener('loadedmetadata', function() {
+                    if (audio.duration && !isNaN(audio.duration)) {
+                        const duration = Math.round(audio.duration);
+                        durationDisplay.textContent = duration;
+                        uploadDuration.classList.remove('hidden');
+                    }
+                    URL.revokeObjectURL(audio.src);
+                });
+                
+                audio.addEventListener('error', function() {
+                    console.warn('Could not load audio metadata');
+                    uploadDuration.classList.add('hidden');
+                });
+            } else {
+                uploadDuration.classList.add('hidden');
+            }
+        });
+    }
+    
+    // Form validation
+    const form = document.getElementById('session-form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const audioFile = audioFileInput?.files[0];
+            const recordedAudio = recordedAudioInput?.value;
+            
+            if (!audioFile && !recordedAudio) {
+                e.preventDefault();
+                alert('Please upload an audio file or record audio before submitting.');
+                return false;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

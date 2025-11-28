@@ -1,0 +1,77 @@
+{% extends 'coach/drill_unified_base.html' %}
+
+{% block drill_content %}
+<div class="space-y-6">
+    <!-- MLK Excerpt Display -->
+    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-8 rounded-xl">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Read this excerpt aloud:</h3>
+        <div class="text-2xl font-medium text-gray-800 leading-relaxed mb-6" id="excerpt-text">
+            {% if mlk_excerpt %}
+            "{{ mlk_excerpt }}"
+            {% else %}
+            <span class="text-red-500">No excerpt available. Please refresh the page.</span>
+            {% endif %}
+        </div>
+        <button onclick="highlightWords()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors">
+            Highlight Difficult Words
+        </button>
+    </div>
+
+    <!-- Phonetic Tips -->
+    {% if phonetic_tips %}
+    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-lg">
+        <h3 class="text-lg font-semibold text-yellow-800 mb-4">Pronunciation Tips</h3>
+        <div class="text-left space-y-2">
+            {% for tip in phonetic_tips %}
+            <div class="text-yellow-700">{{ tip }}</div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Instructions -->
+    <div class="bg-green-50 border-l-4 border-green-400 p-6 rounded-lg">
+        <h3 class="text-lg font-semibold text-green-800 mb-4">Instructions</h3>
+        <ol class="text-left text-green-700 space-y-2">
+            <li>1. Read the excerpt slowly and clearly</li>
+            <li>2. Focus on the highlighted pronunciation tips</li>
+            <li>3. Record yourself reading the text using the recording controls below</li>
+            <li>4. Listen to your recording and review the ML analysis results</li>
+            <li>5. Practice again to improve your scores</li>
+        </ol>
+    </div>
+</div>
+
+<script>
+// Drill-specific JavaScript for Poem Echo Challenge
+function getDrillSpecificParams() {
+    const excerptText = document.getElementById('excerpt-text');
+    const targetText = excerptText ? excerptText.textContent.replace(/"/g, '').trim() : '';
+    return {
+        'target_text': targetText
+    };
+}
+
+function highlightWords() {
+    const excerptText = document.getElementById('excerpt-text');
+    if (!excerptText) return;
+    
+    const text = excerptText.textContent.replace(/"/g, '');
+    const tips = {{ phonetic_tips|safe|default:"[]" }};
+    let highlightedText = text;
+    
+    if (tips && tips.length > 0) {
+        tips.forEach(tip => {
+            const match = tip.match(/'([^']+)':/);
+            if (match) {
+                const word = match[1];
+                const regex = new RegExp(`\\b${word}\\b`, 'gi');
+                highlightedText = highlightedText.replace(regex, `<mark class="bg-yellow-200 px-1 rounded">${word}</mark>`);
+            }
+        });
+    }
+    
+    excerptText.innerHTML = '"' + highlightedText + '"';
+}
+</script>
+{% endblock %}

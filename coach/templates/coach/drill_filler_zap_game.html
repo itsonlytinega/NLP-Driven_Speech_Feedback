@@ -1,0 +1,338 @@
+{% extends 'coach/drill_unified_base.html' %}
+{% load static %}
+
+{% block drill_content %}
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="text-center">
+        <h2 class="text-3xl font-bold text-gray-800 mb-4">Filler Zap Game</h2>
+        <p class="text-lg text-gray-600 mb-6">Zap those filler words and build your streak!</p>
+    </div>
+
+    <!-- Game Level Selection -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Choose Your Level</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {% for level in game_levels %}
+            <button onclick="selectLevel({{ forloop.counter0 }})" 
+                    class="level-btn p-4 border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors {% if forloop.first %}bg-blue-100 border-blue-300{% endif %}">
+                <div class="font-semibold text-lg">{{ level.name }}</div>
+                <div class="text-sm text-gray-600">Time: {{ level.time_limit }}s</div>
+                <div class="text-sm text-gray-600">Target: {{ level.target_score }} points</div>
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Game Interface -->
+    <div class="bg-gradient-to-r from-red-100 to-yellow-100 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Game Interface</h3>
+        
+        <!-- Speech Prompt -->
+        <div class="bg-white rounded-lg p-4 mb-6">
+            <h4 class="font-semibold text-gray-700 mb-2">Your Topic:</h4>
+            <p class="text-lg text-gray-800">{{ selected_prompt }}</p>
+        </div>
+
+        <!-- Game Stats -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="text-center bg-white rounded-lg p-3">
+                <div class="text-2xl font-bold text-red-600" id="score">0</div>
+                <div class="text-sm text-gray-600">Score</div>
+            </div>
+            <div class="text-center bg-white rounded-lg p-3">
+                <div class="text-2xl font-bold text-green-600" id="streak">0</div>
+                <div class="text-sm text-gray-600">Streak</div>
+            </div>
+            <div class="text-center bg-white rounded-lg p-3">
+                <div class="text-2xl font-bold text-blue-600" id="time-left">60</div>
+                <div class="text-sm text-gray-600">Time Left</div>
+            </div>
+            <div class="text-center bg-white rounded-lg p-3">
+                <div class="text-2xl font-bold text-purple-600" id="fillers-zapped">0</div>
+                <div class="text-sm text-gray-600">Fillers Zapped</div>
+            </div>
+        </div>
+
+        <!-- Zap Buttons -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            {% for filler in filler_words %}
+            <button onclick="zapFiller('{{ filler }}')" 
+                    class="zap-btn px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition-all duration-200 hover:scale-105">
+                ⚡ {{ filler }}
+            </button>
+            {% endfor %}
+        </div>
+
+        <!-- Game Controls -->
+        <div class="text-center">
+            <button id="start-game-btn" onclick="startGame()" 
+                    class="px-8 py-4 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold text-lg transition-colors">
+                Start Game!
+            </button>
+            <div id="game-status" class="mt-4 text-lg font-semibold text-gray-600">Ready to zap fillers!</div>
+        </div>
+    </div>
+
+    <!-- Recording Controls -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Speech Recording</h3>
+        <div class="text-center">
+            <button id="record-btn" onclick="startRecording()" 
+                    class="px-8 py-4 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold text-lg transition-colors">
+                Start Speaking
+            </button>
+            <div id="recording-status" class="mt-4 text-lg font-semibold text-gray-600">Ready to record!</div>
+        </div>
+        
+        <!-- Audio Player -->
+        <div id="audio-player" class="mt-6 hidden">
+            <audio controls class="w-full">
+                <source src="" type="audio/wav">
+            </audio>
+        </div>
+    </div>
+
+    <!-- Filler Detection Display -->
+    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-lg">
+        <h3 class="text-xl font-semibold text-yellow-800 mb-4">Filler Detection</h3>
+        <div id="detected-fillers" class="space-y-2">
+            <p class="text-yellow-700">Speak naturally - we'll detect fillers in real-time!</p>
+        </div>
+    </div>
+
+    <!-- Feedback -->
+    <div id="feedback-container" class="bg-gray-50 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Game Feedback</h3>
+        <div id="feedback-buttons"></div>
+    </div>
+</div>
+
+<script>
+// Drill-specific JavaScript
+function getDrillSpecificParams() {
+    // Override this function in individual drill templates if needed
+    return {};
+}
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/drills.js' %}"></script>
+<script>
+    let gameActive = false;
+    let gameTimer = null;
+    let selectedLevel = 0;
+    let score = 0;
+    let streak = 0;
+    let fillersZapped = 0;
+    let timeLeft = 60;
+    let recordingActive = false;
+    let detectedFillers = [];
+
+    const levels = {{ game_levels|safe }};
+    const fillerWords = {{ filler_words|safe }};
+
+    function selectLevel(index) {
+        selectedLevel = index;
+        const level = levels[index];
+        
+        // Update button styles
+        document.querySelectorAll('.level-btn').forEach(btn => {
+            btn.classList.remove('bg-blue-100', 'border-blue-300');
+        });
+        event.target.classList.add('bg-blue-100', 'border-blue-300');
+        
+        timeLeft = level.time_limit;
+        document.getElementById('time-left').textContent = timeLeft;
+    }
+
+    function startGame() {
+        if (gameActive) return;
+        
+        gameActive = true;
+        const level = levels[selectedLevel];
+        
+        document.getElementById('start-game-btn').textContent = 'Game Active!';
+        document.getElementById('start-game-btn').disabled = true;
+        document.getElementById('game-status').textContent = 'Game started! Zap those fillers!';
+        
+        // Start game timer
+        gameTimer = setInterval(() => {
+            timeLeft--;
+            document.getElementById('time-left').textContent = timeLeft;
+            
+            if (timeLeft <= 0) {
+                endGame();
+            }
+        }, 1000);
+        
+        // Start recording
+        startRecording();
+    }
+
+    function endGame() {
+        gameActive = false;
+        clearInterval(gameTimer);
+        
+        const level = levels[selectedLevel];
+        const targetScore = level.target_score;
+        const achieved = score >= targetScore;
+        
+        document.getElementById('start-game-btn').textContent = 'Start New Game';
+        document.getElementById('start-game-btn').disabled = false;
+        
+        if (achieved) {
+            document.getElementById('game-status').textContent = `Level Complete! Score: ${score}/${targetScore}`;
+            document.getElementById('game-status').classList.add('text-green-600');
+        } else {
+            document.getElementById('game-status').textContent = `Try Again! Score: ${score}/${targetScore}`;
+            document.getElementById('game-status').classList.add('text-red-600');
+        }
+        
+        // Show feedback buttons
+        drillComponents.showFeedback('feedback-buttons', function(rating) {
+            console.log('Game feedback:', rating);
+        });
+    }
+
+    function zapFiller(filler) {
+        if (!gameActive) return;
+        
+        // Check if this filler was recently detected
+        const recentDetection = detectedFillers.find(f => 
+            f.word === filler && (Date.now() - f.timestamp) < 3000
+        );
+        
+        if (recentDetection) {
+            // Successful zap!
+            score += 10;
+            streak++;
+            fillersZapped++;
+            
+            // Remove from detected list
+            detectedFillers = detectedFillers.filter(f => f !== recentDetection);
+            
+            // Visual feedback
+            event.target.classList.add('animate-pulse', 'bg-green-500');
+            setTimeout(() => {
+                event.target.classList.remove('animate-pulse', 'bg-green-500');
+            }, 500);
+            
+            // Streak bonus
+            if (streak % 5 === 0) {
+                score += 25; // Bonus points for streaks
+                showStreakBonus();
+            }
+        } else {
+            // Missed zap - reset streak
+            streak = 0;
+            event.target.classList.add('animate-bounce', 'bg-red-700');
+            setTimeout(() => {
+                event.target.classList.remove('animate-bounce', 'bg-red-700');
+            }, 500);
+        }
+        
+        updateGameStats();
+        updateDetectedFillers();
+    }
+
+    function updateGameStats() {
+        document.getElementById('score').textContent = score;
+        document.getElementById('streak').textContent = streak;
+        document.getElementById('fillers-zapped').textContent = fillersZapped;
+    }
+
+    function updateDetectedFillers() {
+        const container = document.getElementById('detected-fillers');
+        
+        if (detectedFillers.length === 0) {
+            container.innerHTML = '<p class="text-yellow-700">No fillers detected - keep speaking!</p>';
+            return;
+        }
+        
+        container.innerHTML = detectedFillers.map(filler => `
+            <div class="flex items-center justify-between bg-yellow-200 p-2 rounded">
+                <span class="font-semibold text-yellow-800">${filler.word}</span>
+                <span class="text-xs text-yellow-600">${Math.round((Date.now() - filler.timestamp) / 1000)}s ago</span>
+            </div>
+        `).join('');
+    }
+
+    function showStreakBonus() {
+        const bonusDiv = document.createElement('div');
+        bonusDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-bounce';
+        bonusDiv.textContent = `Streak Bonus! +25 points!`;
+        document.body.appendChild(bonusDiv);
+        
+        setTimeout(() => {
+            bonusDiv.remove();
+        }, 2000);
+    }
+
+    function startRecording() {
+        if (recordingActive) return;
+        
+        recordingActive = true;
+        document.getElementById('record-btn').textContent = 'Recording...';
+        document.getElementById('record-btn').disabled = true;
+        document.getElementById('recording-status').textContent = 'Recording - speak naturally!';
+        
+        drillComponents.startMic({
+            onStart: function() {
+                console.log('Filler zap recording started');
+            },
+            onStop: function(audioBlob, audioUrl) {
+                recordingActive = false;
+                document.getElementById('record-btn').textContent = 'Start Speaking';
+                document.getElementById('record-btn').disabled = false;
+                document.getElementById('recording-status').textContent = 'Recording complete!';
+                
+                // Show audio playback
+                const audioPlayer = document.getElementById('audio-player');
+                audioPlayer.querySelector('audio').src = audioUrl;
+                audioPlayer.classList.remove('hidden');
+            },
+            onError: function(error) {
+                alert('Error accessing microphone: ' + error.message);
+                recordingActive = false;
+                document.getElementById('record-btn').textContent = 'Start Speaking';
+                document.getElementById('record-btn').disabled = false;
+            }
+        });
+        
+        // Simulate filler detection (in real implementation, this would use speech recognition)
+        simulateFillerDetection();
+    }
+
+    function simulateFillerDetection() {
+        if (!recordingActive) return;
+        
+        // Randomly detect fillers
+        if (Math.random() < 0.3) { // 30% chance per second
+            const randomFiller = fillerWords[Math.floor(Math.random() * fillerWords.length)];
+            detectedFillers.push({
+                word: randomFiller,
+                timestamp: Date.now()
+            });
+            updateDetectedFillers();
+        }
+        
+        // Remove old detections
+        detectedFillers = detectedFillers.filter(f => 
+            (Date.now() - f.timestamp) < 5000
+        );
+        
+        if (recordingActive) {
+            setTimeout(simulateFillerDetection, 1000);
+        }
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        selectLevel(0);
+        updateGameStats();
+        updateDetectedFillers();
+    });
+</script>
+{% endblock %}

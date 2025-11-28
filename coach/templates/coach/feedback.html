@@ -1,0 +1,394 @@
+{% extends 'coach/base.html' %}
+{% load static %}
+
+{% block title %}Feedback - Verbal Coach{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header with Stats -->
+    <div class="bg-gradient-to-r from-blue-600 to-purple-600 overflow-hidden shadow rounded-lg text-white">
+        <div class="px-4 py-5 sm:p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold mb-2">Speech Analysis Feedback</h1>
+                    <p class="text-blue-100">Track your progress across all speech sessions and feedback</p>
+                </div>
+                {% if stats %}
+                <div class="text-right">
+                    <div class="text-3xl font-bold">{{ stats.total_sessions }}</div>
+                    <div class="text-sm text-blue-100">Total Entries</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Performance Visualization -->
+    {% if current_performance %}
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Your Current Performance</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {% if current_performance.filler_score is not None %}
+                <div class="bg-red-50 rounded-lg p-4 border-l-4 border-red-500">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-red-800">Filler Score</span>
+                        <span class="text-lg font-bold text-red-900">{{ current_performance.filler_score|floatformat:1 }}%</span>
+                    </div>
+                    <div class="w-full bg-red-200 rounded-full h-3 mb-2">
+                        <div class="bg-red-600 h-3 rounded-full progress-bar" style="width: {{ current_performance.filler_score }}%"></div>
+                    </div>
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-red-600">Target: &lt;20%</span>
+                        <span class="text-red-600">{% if current_performance.fillers_count %}Fillers: {{ current_performance.fillers_count }}{% endif %}</span>
+                    </div>
+                    {% if current_performance.filler_score > 60 %}
+                    <p class="text-xs text-red-700 mt-2">High filler usage - Focus area!</p>
+                    {% elif current_performance.filler_score > 40 %}
+                    <p class="text-xs text-yellow-700 mt-2">Room for improvement</p>
+                    {% else %}
+                    <p class="text-xs text-green-700 mt-2">Good performance!</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                {% if current_performance.clarity_score is not None %}
+                <div class="bg-green-50 rounded-lg p-4 border-l-4 border-green-500">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-green-800">Clarity Score</span>
+                        <span class="text-lg font-bold text-green-900">{{ current_performance.clarity_score|floatformat:1 }}%</span>
+                    </div>
+                    <div class="w-full bg-green-200 rounded-full h-3 mb-2">
+                        <div class="bg-green-600 h-3 rounded-full progress-bar" style="width: {{ current_performance.clarity_score }}%"></div>
+                    </div>
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-green-600">Target: &lt;30%</span>
+                        <span class="text-green-600">Lower is better</span>
+                    </div>
+                    {% if current_performance.clarity_score > 50 %}
+                    <p class="text-xs text-red-700 mt-2">Clarity needs work</p>
+                    {% elif current_performance.clarity_score > 30 %}
+                    <p class="text-xs text-yellow-700 mt-2">Improving clarity</p>
+                    {% else %}
+                    <p class="text-xs text-green-700 mt-2">Excellent clarity!</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                {% if current_performance.pacing_score is not None %}
+                <div class="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-blue-800">Pacing Score</span>
+                        <span class="text-lg font-bold text-blue-900">{{ current_performance.pacing_score|floatformat:1 }}%</span>
+                    </div>
+                    <div class="w-full bg-blue-200 rounded-full h-3 mb-2">
+                        <div class="bg-blue-600 h-3 rounded-full progress-bar" style="width: {{ current_performance.pacing_score }}%"></div>
+                    </div>
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-blue-600">Target: &lt;40%</span>
+                        <span class="text-blue-600">Optimal: 120-180 WPM</span>
+                    </div>
+                    {% if current_performance.pacing_score > 60 %}
+                    <p class="text-xs text-red-700 mt-2">Pacing needs adjustment</p>
+                    {% elif current_performance.pacing_score > 40 %}
+                    <p class="text-xs text-yellow-700 mt-2">Working on pace</p>
+                    {% else %}
+                    <p class="text-xs text-green-700 mt-2">Great pacing!</p>
+                    {% endif %}
+                </div>
+                {% elif current_performance.fillers_count %}
+                <div class="bg-gray-50 rounded-lg p-4 border-l-4 border-gray-500">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-gray-800">Fillers Detected</span>
+                        <span class="text-lg font-bold text-gray-900">{{ current_performance.fillers_count }}</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-3 mb-2">
+                        <div class="bg-gray-600 h-3 rounded-full progress-bar" style="width: {% widthratio current_performance.fillers_count 100 100 %}%"></div>
+                    </div>
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-gray-600">Target: &lt;10 fillers</span>
+                        {% if current_performance.duration %}
+                        <span class="text-gray-600">{{ current_performance.duration|floatformat:0 }}s session</span>
+                        {% endif %}
+                    </div>
+                    {% if current_performance.fillers_count > 50 %}
+                    <p class="text-xs text-red-700 mt-2">Very high filler count!</p>
+                    {% elif current_performance.fillers_count > 20 %}
+                    <p class="text-xs text-yellow-700 mt-2">Reduce fillers</p>
+                    {% else %}
+                    <p class="text-xs text-green-700 mt-2">Low filler usage!</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Potential Encouragement Message -->
+    {% if potential_message %}
+    <div class="encouragement-card bg-{% if potential_message.type == 'success' %}green{% elif potential_message.type == 'warning' %}yellow{% else %}blue{% endif %}-50 border-l-4 border-{% if potential_message.type == 'success' %}green{% elif potential_message.type == 'warning' %}yellow{% else %}blue{% endif %}-400 rounded-lg p-4 shadow-lg">
+        <div class="flex items-start">
+            <div class="flex-shrink-0">
+                <i class="fas fa-{% if potential_message.type == 'success' %}check-circle{% elif potential_message.type == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} text-{% if potential_message.type == 'success' %}green{% elif potential_message.type == 'warning' %}yellow{% else %}blue{% endif %}-400 text-3xl"></i>
+            </div>
+            <div class="ml-4 flex-1">
+                <h3 class="text-xl font-bold text-gray-900 mb-2">{{ potential_message.title }}</h3>
+                <p class="text-base text-gray-700 mb-3">{{ potential_message.message }}</p>
+                {% if potential_message.improvement_potential %}
+                <div class="bg-white rounded-lg p-3 border-2 border-{% if potential_message.type == 'success' %}green{% elif potential_message.type == 'warning' %}yellow{% else %}blue{% endif %}-300">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-gray-700">Improvement Potential</span>
+                        <span class="text-2xl font-bold text-{% if potential_message.type == 'success' %}green{% elif potential_message.type == 'warning' %}yellow{% else %}blue{% endif %}-600">{{ potential_message.improvement_potential }}%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-gradient-to-r from-{% if potential_message.type == 'success' %}green{% elif potential_message.type == 'warning' %}yellow{% else %}blue{% endif %}-400 to-{% if potential_message.type == 'success' %}green{% elif potential_message.type == 'warning' %}yellow{% else %}blue{% endif %}-600 h-2 rounded-full progress-bar" style="width: {{ potential_message.improvement_potential }}%"></div>
+                    </div>
+                    <p class="text-xs text-gray-600 mt-2">With consistent practice, you can achieve this improvement in 2-3 weeks!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recommended Drills -->
+    {% if recommended_drills %}
+    <div class="bg-gradient-to-r from-purple-50 to-indigo-50 shadow rounded-lg border-2 border-purple-300">
+        <div class="px-4 py-5 sm:p-6">
+            <div class="flex items-center mb-4">
+                <i class="fas fa-lightbulb text-2xl text-purple-600 mr-3"></i>
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Recommended Drills for You</h3>
+            </div>
+            <p class="text-sm text-gray-600 mb-4">Based on your current performance, we recommend these targeted drills to help you reach your potential:</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {% for drill in recommended_drills %}
+                <div class="bg-white rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow border-l-4 border-purple-500">
+                    <div class="flex items-start justify-between mb-2">
+                        <h4 class="text-base font-semibold text-gray-900">{{ drill.name }}</h4>
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                            {% if drill.skill_type == 'pronunciation' %}bg-blue-100 text-blue-800
+                            {% elif drill.skill_type == 'filler_words' %}bg-red-100 text-red-800
+                            {% elif drill.skill_type == 'pacing' %}bg-yellow-100 text-yellow-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ drill.get_skill_type_display }}
+                        </span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">{{ drill.description|truncatewords:20 }}</p>
+                    <a href="{% url 'coach:drill_detail' drill.id %}" class="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 transition-colors w-full justify-center">
+                        <i class="fas fa-play mr-2"></i>
+                        Start Practice Now
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="mt-4 text-center">
+                <a href="{% url 'coach:drills_list' %}" class="text-purple-600 hover:text-purple-500 text-sm font-medium">
+                    View all drills →
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Average Scores -->
+    {% if avg_filler_score is not None or avg_clarity_score is not None or avg_pacing_score is not None %}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {% if avg_filler_score is not None %}
+        <div class="bg-white overflow-hidden shadow rounded-lg border-t-4 border-red-500">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-comments text-2xl text-red-600"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Avg Filler Score</dt>
+                            <dd class="text-lg font-medium text-gray-900">{{ avg_filler_score }}%</dd>
+                            <dd class="text-xs text-gray-500">Lower is better</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if avg_clarity_score is not None %}
+        <div class="bg-white overflow-hidden shadow rounded-lg border-t-4 border-green-500">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-volume-up text-2xl text-green-600"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Avg Clarity Score</dt>
+                            <dd class="text-lg font-medium text-gray-900">{{ avg_clarity_score }}%</dd>
+                            <dd class="text-xs text-gray-500">Lower is better</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if avg_pacing_score is not None %}
+        <div class="bg-white overflow-hidden shadow rounded-lg border-t-4 border-yellow-500">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-clock text-2xl text-yellow-600"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Avg Pacing Score</dt>
+                            <dd class="text-lg font-medium text-gray-900">{{ avg_pacing_score }}%</dd>
+                            <dd class="text-xs text-gray-500">Lower is better</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- All Feedback Entries -->
+    {% if feedbacks %}
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">All Feedback & Sessions</h3>
+            <div class="space-y-6">
+                {% for entry in feedbacks %}
+                <div class="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex items-center">
+                            {% if entry.type == 'session' %}
+                            <i class="fas fa-headphones text-blue-600 text-xl mr-3"></i>
+                            {% else %}
+                            <i class="fas fa-microphone text-purple-600 text-xl mr-3"></i>
+                            {% endif %}
+                            <div>
+                                <h3 class="text-lg font-medium text-gray-900">
+                                    {% if entry.type == 'session' %}
+                                        Session #{{ entry.id }}
+                                    {% else %}
+                                        Feedback #{{ entry.id }}
+                                    {% endif %}
+                                </h3>
+                                <p class="text-sm text-gray-500 mt-1">
+                                    <i class="fas fa-calendar mr-1"></i>
+                                    {{ entry.date|date:"M d, Y H:i" }}
+                                </p>
+                            </div>
+                        </div>
+                        {% if entry.type == 'session' %}
+                        <a href="{% url 'speech_sessions:session_detail' entry.id %}" class="text-blue-600 hover:text-blue-500 text-sm font-medium">
+                            View Details →
+                        </a>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Scores Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                        {% if entry.filler_score is not None %}
+                        <div class="bg-red-50 p-3 rounded-lg border-l-4 border-red-500">
+                            <div class="text-sm font-medium text-red-800">Filler Score</div>
+                            <div class="text-2xl font-bold text-red-900">{{ entry.filler_score|floatformat:2 }}</div>
+                            <div class="text-xs text-red-600 mt-1">{% if entry.fillers_count %}Fillers: {{ entry.fillers_count }}{% endif %}</div>
+                        </div>
+                        {% elif entry.fillers_count is not None %}
+                        <div class="bg-yellow-50 p-3 rounded-lg border-l-4 border-yellow-500">
+                            <div class="text-sm font-medium text-yellow-800">Fillers</div>
+                            <div class="text-2xl font-bold text-yellow-900">{{ entry.fillers_count }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if entry.clarity_score is not None %}
+                        <div class="bg-green-50 p-3 rounded-lg border-l-4 border-green-500">
+                            <div class="text-sm font-medium text-green-800">Clarity Score</div>
+                            <div class="text-2xl font-bold text-green-900">{{ entry.clarity_score|floatformat:2 }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if entry.pacing_score is not None %}
+                        <div class="bg-blue-50 p-3 rounded-lg border-l-4 border-blue-500">
+                            <div class="text-sm font-medium text-blue-800">Pacing Score</div>
+                            <div class="text-2xl font-bold text-blue-900">{{ entry.pacing_score|floatformat:2 }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if entry.wpm is not None %}
+                        <div class="bg-purple-50 p-3 rounded-lg border-l-4 border-purple-500">
+                            <div class="text-sm font-medium text-purple-800">WPM</div>
+                            <div class="text-2xl font-bold text-purple-900">{{ entry.wpm }}</div>
+                        </div>
+                        {% elif entry.duration %}
+                        <div class="bg-gray-50 p-3 rounded-lg border-l-4 border-gray-500">
+                            <div class="text-sm font-medium text-gray-800">Duration</div>
+                            <div class="text-2xl font-bold text-gray-900">
+                                {{ entry.duration|floatformat:0 }}s
+                            </div>
+                            <div class="text-xs text-gray-600 mt-1">
+                                {% widthratio entry.duration 60 1 %} min
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Transcription -->
+                    {% if entry.transcription %}
+                    <div class="mb-4">
+                        <h4 class="text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-file-alt mr-1"></i> Transcription:
+                        </h4>
+                        <p class="text-gray-600 bg-gray-50 p-3 rounded-lg text-sm">{{ entry.transcription|truncatewords:50 }}</p>
+                        {% if entry.type == 'session' %}
+                        <p class="text-xs text-blue-600 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Click "View Details →" above to see full AI analysis with model scores
+                        </p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Audio Playback -->
+                    {% if entry.audio_file %}
+                    <div class="mb-4">
+                        <audio controls class="w-full">
+                            <source src="{{ entry.audio_file.url }}" type="audio/mpeg">
+                            <source src="{{ entry.audio_file.url }}" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6 text-center py-12">
+            <i class="fas fa-chart-line text-6xl text-gray-300 mb-4"></i>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No feedback yet</h3>
+            <p class="text-gray-500 mb-6">Record a speech session or upload audio to get started with speech analysis.</p>
+            <div class="flex justify-center gap-4">
+                <a href="{% url 'speech_sessions:session_create' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                    <i class="fas fa-microphone mr-2"></i>
+                    Record Session
+                </a>
+                <a href="{% url 'coach:upload' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    <i class="fas fa-upload mr-2"></i>
+                    Upload Audio
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% endblock %}

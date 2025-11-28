@@ -1,0 +1,464 @@
+{% extends 'coach/drill_unified_base.html' %}
+{% load static %}
+
+{% block drill_content %}
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="text-center">
+        <h2 class="text-3xl font-bold text-gray-800 mb-4">Timer Tag Team</h2>
+        <p class="text-lg text-gray-600 mb-6">Master alternating speech and pause patterns with dynamic prompts!</p>
+    </div>
+
+    <!-- Timer Configuration -->
+    <div class="bg-gradient-to-r from-blue-100 to-green-100 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Timer Configuration</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Speech Timer -->
+            <div class="bg-white rounded-lg p-4">
+                <h4 class="font-semibold text-gray-700 mb-3">Speech Timer</h4>
+                <div class="flex items-center space-x-4">
+                    <label class="text-sm text-gray-600">Duration:</label>
+                    <input type="range" id="speech-duration" min="15" max="60" step="5" value="30" 
+                           class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                           oninput="updateSpeechDuration(this.value)">
+                    <span id="speech-duration-value" class="text-lg font-bold text-blue-600">30s</span>
+                </div>
+            </div>
+            
+            <!-- Pause Timer -->
+            <div class="bg-white rounded-lg p-4">
+                <h4 class="font-semibold text-gray-700 mb-3">Pause Timer</h4>
+                <div class="flex items-center space-x-4">
+                    <label class="text-sm text-gray-600">Duration:</label>
+                    <input type="range" id="pause-duration" min="5" max="30" step="5" value="10" 
+                           class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                           oninput="updatePauseDuration(this.value)">
+                    <span id="pause-duration-value" class="text-lg font-bold text-green-600">10s</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Presets -->
+        <div class="mt-6">
+            <h4 class="font-semibold text-gray-700 mb-3">Quick Presets</h4>
+            <div class="grid grid-cols-3 gap-3">
+                <button onclick="setPreset(30, 10)" class="preset-btn px-4 py-2 border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors">
+                    <div class="font-semibold">Standard</div>
+                    <div class="text-sm text-gray-600">30s/10s</div>
+                </button>
+                <button onclick="setPreset(45, 15)" class="preset-btn px-4 py-2 border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors">
+                    <div class="font-semibold">Extended</div>
+                    <div class="text-sm text-gray-600">45s/15s</div>
+                </button>
+                <button onclick="setPreset(20, 5)" class="preset-btn px-4 py-2 border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors">
+                    <div class="font-semibold">Quick</div>
+                    <div class="text-sm text-gray-600">20s/5s</div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Phase Display -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Current Phase</h3>
+        
+        <div class="text-center">
+            <div id="phase-display" class="text-4xl font-bold text-gray-800 mb-4">Ready to Start</div>
+            <div id="timer-display" class="text-6xl font-bold text-blue-600 mb-6">00:00</div>
+            
+            <!-- Phase Indicator -->
+            <div class="flex justify-center space-x-4 mb-6">
+                <div id="speech-indicator" class="w-8 h-8 rounded-full bg-gray-300"></div>
+                <div class="text-gray-500">→</div>
+                <div id="pause-indicator" class="w-8 h-8 rounded-full bg-gray-300"></div>
+            </div>
+            
+            <!-- Control Buttons -->
+            <div class="space-x-4">
+                <button id="start-btn" onclick="startTagTeam()" 
+                        class="px-8 py-4 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold text-lg transition-colors">
+                    🏃 Start Tag Team
+                </button>
+                <button id="pause-btn" onclick="pauseTagTeam()" 
+                        class="px-8 py-4 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-semibold text-lg transition-colors hidden">
+                    ⏸️ Pause
+                </button>
+                <button id="stop-btn" onclick="stopTagTeam()" 
+                        class="px-8 py-4 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold text-lg transition-colors hidden">
+                    ⏹️ Stop
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Topic Prompts -->
+    <div class="bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Dynamic Topic Prompts</h3>
+        
+        <div class="bg-white rounded-lg p-6 mb-4">
+            <h4 class="text-lg font-bold text-purple-800 mb-3">Current Topic</h4>
+            <div id="current-topic" class="text-xl text-gray-700 mb-4">{{ current_topic }}</div>
+            
+            <!-- Topic Controls -->
+            <div class="text-center space-x-4">
+                <button onclick="loadNewTopic()" 
+                        class="px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold transition-colors">
+                    🎯 New Topic
+                </button>
+                <button onclick="loadRandomTopic()" 
+                        class="px-6 py-3 bg-pink-500 hover:bg-pink-600 text-white rounded-lg font-semibold transition-colors">
+                    🎲 Random Topic
+                </button>
+            </div>
+        </div>
+        
+        <!-- Topic Categories -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {% for category in topic_categories %}
+            <button onclick="loadTopicCategory('{{ category }}')" 
+                    class="px-4 py-3 bg-white border border-gray-300 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition-colors">
+                <div class="font-semibold text-gray-700">{{ category }}</div>
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Recording Section -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Tag Team Recording</h3>
+        
+        <div class="text-center">
+            <button id="record-btn" onclick="startRecording()" 
+                    class="px-8 py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold text-lg transition-colors">
+                🎤 Start Recording
+            </button>
+            <div id="recording-status" class="mt-4 text-lg font-semibold text-gray-600">Ready to record your tag team session!</div>
+        </div>
+        
+        <!-- Audio Player -->
+        <div id="audio-player" class="mt-6 hidden">
+            <audio controls class="w-full" id="tag-team-audio">
+                <source src="" type="audio/wav">
+            </audio>
+        </div>
+    </div>
+
+    <!-- Session Statistics -->
+    <div class="bg-gradient-to-r from-green-100 to-blue-100 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Session Statistics</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Speech Rounds</div>
+                <div id="speech-rounds" class="text-3xl font-bold text-blue-600">0</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Pause Rounds</div>
+                <div id="pause-rounds" class="text-3xl font-bold text-green-600">0</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Total Time</div>
+                <div id="total-time" class="text-3xl font-bold text-purple-600">0:00</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Efficiency</div>
+                <div id="efficiency" class="text-3xl font-bold text-orange-600">0%</div>
+            </div>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="mt-6">
+            <div class="flex justify-between text-sm text-gray-600 mb-2">
+                <span>Session Progress</span>
+                <span id="progress-percentage">0%</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-3">
+                <div id="progress-bar" class="bg-gradient-to-r from-blue-500 to-green-500 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+        </div>
+        
+        <!-- Tag Team Tips -->
+        <div class="mt-6 bg-white rounded-lg p-4">
+            <h4 class="font-semibold text-gray-700 mb-2">Tag Team Tips:</h4>
+            <ul class="text-sm text-gray-600 space-y-1">
+                <li>• Use speech phases to practice clear articulation</li>
+                <li>• Use pause phases to plan your next thoughts</li>
+                <li>• Maintain steady pacing throughout each phase</li>
+                <li>• Practice smooth transitions between speech and pause</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Feedback -->
+    <div id="feedback-container" class="bg-gray-50 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Tag Team Feedback</h3>
+        <div id="feedback-buttons"></div>
+    </div>
+</div>
+
+<script>
+// Drill-specific JavaScript
+function getDrillSpecificParams() {
+    // Override this function in individual drill templates if needed
+    return {};
+}
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/drills.js' %}"></script>
+<script>
+    let tagTeamActive = false;
+    let currentPhase = 'ready'; // 'speech', 'pause', 'ready'
+    let speechDuration = 30;
+    let pauseDuration = 10;
+    let speechRounds = 0;
+    let pauseRounds = 0;
+    let totalTime = 0;
+    let recordingActive = false;
+    let timerInterval = null;
+    let currentTime = 0;
+
+    const topics = {{ topic_prompts|safe }};
+    const categories = {{ topic_categories|safe }};
+
+    function updateSpeechDuration(duration) {
+        speechDuration = parseInt(duration);
+        document.getElementById('speech-duration-value').textContent = speechDuration + 's';
+    }
+
+    function updatePauseDuration(duration) {
+        pauseDuration = parseInt(duration);
+        document.getElementById('pause-duration-value').textContent = pauseDuration + 's';
+    }
+
+    function setPreset(speech, pause) {
+        speechDuration = speech;
+        pauseDuration = pause;
+        document.getElementById('speech-duration').value = speech;
+        document.getElementById('pause-duration').value = pause;
+        updateSpeechDuration(speech);
+        updatePauseDuration(pause);
+        
+        // Update preset button styles
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.classList.remove('bg-blue-100', 'border-blue-300');
+        });
+        event.target.classList.add('bg-blue-100', 'border-blue-300');
+    }
+
+    function startTagTeam() {
+        tagTeamActive = true;
+        currentPhase = 'speech';
+        currentTime = speechDuration;
+        
+        document.getElementById('start-btn').classList.add('hidden');
+        document.getElementById('pause-btn').classList.remove('hidden');
+        document.getElementById('stop-btn').classList.remove('hidden');
+        
+        updatePhaseDisplay();
+        startTimer();
+    }
+
+    function pauseTagTeam() {
+        tagTeamActive = false;
+        if (timerInterval) {
+            clearInterval(timerInterval);
+        }
+        
+        document.getElementById('pause-btn').textContent = '▶️ Resume';
+        document.getElementById('pause-btn').onclick = resumeTagTeam;
+    }
+
+    function resumeTagTeam() {
+        tagTeamActive = true;
+        document.getElementById('pause-btn').textContent = '⏸️ Pause';
+        document.getElementById('pause-btn').onclick = pauseTagTeam;
+        startTimer();
+    }
+
+    function stopTagTeam() {
+        tagTeamActive = false;
+        if (timerInterval) {
+            clearInterval(timerInterval);
+        }
+        
+        currentPhase = 'ready';
+        currentTime = 0;
+        
+        document.getElementById('start-btn').classList.remove('hidden');
+        document.getElementById('pause-btn').classList.add('hidden');
+        document.getElementById('stop-btn').classList.add('hidden');
+        
+        updatePhaseDisplay();
+        updateStatistics();
+    }
+
+    function startTimer() {
+        timerInterval = setInterval(() => {
+            if (!tagTeamActive) return;
+            
+            currentTime--;
+            totalTime++;
+            
+            updateTimerDisplay();
+            updateProgress();
+            
+            if (currentTime <= 0) {
+                switchPhase();
+            }
+        }, 1000);
+    }
+
+    function switchPhase() {
+        if (currentPhase === 'speech') {
+            currentPhase = 'pause';
+            currentTime = pauseDuration;
+            pauseRounds++;
+        } else {
+            currentPhase = 'speech';
+            currentTime = speechDuration;
+            speechRounds++;
+        }
+        
+        updatePhaseDisplay();
+        updateStatistics();
+        
+        // Play buzzer sound (simulated)
+        playBuzzer();
+    }
+
+    function updatePhaseDisplay() {
+        const phaseDisplay = document.getElementById('phase-display');
+        const speechIndicator = document.getElementById('speech-indicator');
+        const pauseIndicator = document.getElementById('pause-indicator');
+        
+        switch (currentPhase) {
+            case 'speech':
+                phaseDisplay.textContent = '🎤 SPEECH PHASE';
+                phaseDisplay.className = 'text-4xl font-bold text-blue-600 mb-4';
+                speechIndicator.className = 'w-8 h-8 rounded-full bg-blue-500 animate-pulse';
+                pauseIndicator.className = 'w-8 h-8 rounded-full bg-gray-300';
+                break;
+            case 'pause':
+                phaseDisplay.textContent = '⏸️ PAUSE PHASE';
+                phaseDisplay.className = 'text-4xl font-bold text-green-600 mb-4';
+                speechIndicator.className = 'w-8 h-8 rounded-full bg-gray-300';
+                pauseIndicator.className = 'w-8 h-8 rounded-full bg-green-500 animate-pulse';
+                break;
+            default:
+                phaseDisplay.textContent = 'Ready to Start';
+                phaseDisplay.className = 'text-4xl font-bold text-gray-800 mb-4';
+                speechIndicator.className = 'w-8 h-8 rounded-full bg-gray-300';
+                pauseIndicator.className = 'w-8 h-8 rounded-full bg-gray-300';
+        }
+    }
+
+    function updateTimerDisplay() {
+        const minutes = Math.floor(currentTime / 60);
+        const seconds = currentTime % 60;
+        document.getElementById('timer-display').textContent = 
+            `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    function updateProgress() {
+        const totalRounds = speechRounds + pauseRounds;
+        const maxRounds = 10; // Maximum rounds for progress calculation
+        const progress = Math.min((totalRounds / maxRounds) * 100, 100);
+        
+        document.getElementById('progress-bar').style.width = progress + '%';
+        document.getElementById('progress-percentage').textContent = Math.round(progress) + '%';
+    }
+
+    function updateStatistics() {
+        document.getElementById('speech-rounds').textContent = speechRounds;
+        document.getElementById('pause-rounds').textContent = pauseRounds;
+        
+        const totalMinutes = Math.floor(totalTime / 60);
+        const totalSeconds = totalTime % 60;
+        document.getElementById('total-time').textContent = 
+            `${totalMinutes}:${totalSeconds.toString().padStart(2, '0')}`;
+        
+        // Calculate efficiency (speech time vs total time)
+        const speechTime = speechRounds * speechDuration;
+        const efficiency = totalTime > 0 ? Math.round((speechTime / totalTime) * 100) : 0;
+        document.getElementById('efficiency').textContent = efficiency + '%';
+    }
+
+    function playBuzzer() {
+        // Simulate buzzer sound with visual feedback
+        const timerDisplay = document.getElementById('timer-display');
+        timerDisplay.classList.add('animate-pulse', 'text-red-600');
+        setTimeout(() => {
+            timerDisplay.classList.remove('animate-pulse', 'text-red-600');
+        }, 1000);
+    }
+
+    function loadNewTopic() {
+        const randomTopic = topics[Math.floor(Math.random() * topics.length)];
+        document.getElementById('current-topic').textContent = randomTopic;
+    }
+
+    function loadRandomTopic() {
+        loadNewTopic();
+    }
+
+    function loadTopicCategory(category) {
+        const categoryTopics = topics.filter(topic => 
+            topic.toLowerCase().includes(category.toLowerCase())
+        );
+        
+        if (categoryTopics.length > 0) {
+            const randomTopic = categoryTopics[Math.floor(Math.random() * categoryTopics.length)];
+            document.getElementById('current-topic').textContent = randomTopic;
+        } else {
+            loadNewTopic();
+        }
+    }
+
+    function startRecording() {
+        if (recordingActive) return;
+        
+        recordingActive = true;
+        document.getElementById('record-btn').textContent = 'Recording...';
+        document.getElementById('record-btn').disabled = true;
+        document.getElementById('recording-status').textContent = 'Recording your tag team session...';
+        
+        drillComponents.startMic({
+            onStart: function() {
+                console.log('Tag team recording started');
+            },
+            onStop: function(audioBlob, audioUrl) {
+                recordingActive = false;
+                document.getElementById('record-btn').textContent = '🎤 Start Recording';
+                document.getElementById('record-btn').disabled = false;
+                document.getElementById('recording-status').textContent = 'Recording complete!';
+                
+                // Show audio playback
+                const audioPlayer = document.getElementById('audio-player');
+                const audio = document.getElementById('tag-team-audio');
+                audio.src = audioUrl;
+                audioPlayer.classList.remove('hidden');
+                
+                // Show feedback buttons
+                drillComponents.showFeedback('feedback-buttons', function(rating) {
+                    console.log('Tag team feedback:', rating);
+                });
+            },
+            onError: function(error) {
+                alert('Error accessing microphone: ' + error.message);
+                recordingActive = false;
+                document.getElementById('record-btn').textContent = '🎤 Start Recording';
+                document.getElementById('record-btn').disabled = false;
+            }
+        });
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        updatePhaseDisplay();
+        updateStatistics();
+    });
+</script>
+{% endblock %}

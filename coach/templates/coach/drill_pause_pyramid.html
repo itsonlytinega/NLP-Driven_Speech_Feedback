@@ -1,0 +1,280 @@
+{% extends 'coach/drill_unified_base.html' %}
+{% load static %}
+
+{% block drill_content %}
+<div class="space-y-8">
+    <!-- Speech Prompt -->
+    <div class="bg-blue-50 border-l-4 border-blue-400 p-6 rounded-lg">
+        <h3 class="text-xl font-semibold text-blue-800 mb-4">Your Speech Prompt</h3>
+        {% if selected_prompt %}
+        <p class="text-lg text-blue-700 mb-4" id="prompt-text">{{ selected_prompt }}</p>
+        {% else %}
+        <p class="text-red-500">No prompt available. Please refresh the page.</p>
+        {% endif %}
+        <p class="text-sm text-blue-600">Insert pauses after each sentence to build your pyramid!</p>
+    </div>
+
+    <!-- Pyramid Visualization -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-6">Pause Pyramid</h3>
+        
+        <!-- Pyramid Levels -->
+        <div class="pyramid-container flex flex-col items-center space-y-2">
+            {% for level in pyramid_levels %}
+            <div class="pyramid-level flex items-center space-x-4 w-full max-w-md">
+                <div class="pyramid-block w-16 h-12 bg-gray-200 border-2 border-gray-300 rounded-lg flex items-center justify-center text-sm font-semibold text-gray-600">
+                    Level {{ level.level }}
+                </div>
+                <div class="pyramid-info flex-1">
+                    <div class="text-sm font-medium text-gray-700">{{ level.description }}</div>
+                    <div class="text-xs text-gray-500">Insert {{ level.pause_duration }}s pause</div>
+                </div>
+                <button onclick="addPause({{ level.level }}, {{ level.pause_duration }})" 
+                        class="pyramid-btn px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm transition-colors">
+                    Add Pause
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Timer Controls -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Pause Timer</h3>
+        <div class="text-center">
+            <div id="pause-timer" class="text-4xl font-bold text-blue-600 mb-4">0.0s</div>
+            <div class="space-x-4">
+                <button id="start-pause-btn" onclick="startPauseTimer()" 
+                        class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition-colors">
+                    Start Pause
+                </button>
+                <button id="stop-pause-btn" onclick="stopPauseTimer()" 
+                        class="px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition-colors" 
+                        disabled>
+                    Stop Pause
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Tracking -->
+    <div class="bg-gradient-to-r from-green-100 to-blue-100 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Pyramid Progress</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Completed Levels</div>
+                <div id="completed-levels" class="text-3xl font-bold text-green-600">0</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Total Pause Time</div>
+                <div id="total-pause-time" class="text-3xl font-bold text-blue-600">0.0s</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Pyramid Score</div>
+                <div id="pyramid-score" class="text-3xl font-bold text-purple-600">0</div>
+            </div>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="mt-6">
+            <div class="flex justify-between text-sm text-gray-600 mb-2">
+                <span>Pyramid Progress</span>
+                <span id="progress-percentage">0%</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-4">
+                <div id="progress-bar" class="bg-gradient-to-r from-green-400 to-blue-500 h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recording Controls -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Speech Recording</h3>
+        <div class="text-center">
+            <button id="record-btn" onclick="startRecording()" 
+                    class="px-8 py-4 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold text-lg transition-colors">
+                Record Your Speech
+            </button>
+            <div id="recording-status" class="mt-4 text-lg font-semibold text-gray-600">Ready to record!</div>
+        </div>
+        
+        <!-- Audio Player -->
+        <div id="audio-player" class="mt-6 hidden">
+            <audio controls class="w-full">
+                <source src="" type="audio/wav">
+            </audio>
+        </div>
+    </div>
+
+    <!-- Feedback -->
+    <div id="feedback-container" class="bg-gray-50 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Pyramid Feedback</h3>
+        <div id="feedback-buttons"></div>
+    </div>
+</div>
+
+<script>
+// Drill-specific JavaScript
+function getDrillSpecificParams() {
+    // Override this function in individual drill templates if needed
+    return {};
+}
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/drills.js' %}"></script>
+<script>
+    let pauseTimerInterval = null;
+    let pauseStartTime = null;
+    let currentPauseDuration = 0;
+    let completedLevels = 0;
+    let totalPauseTime = 0;
+    let pyramidScore = 0;
+    let recordingActive = false;
+
+    function addPause(level, duration) {
+        if (completedLevels >= level - 1) {
+            // Mark level as completed
+            const levelBtn = event.target;
+            levelBtn.textContent = '✓ Completed';
+            levelBtn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+            levelBtn.classList.add('bg-green-500', 'hover:bg-green-500');
+            levelBtn.disabled = true;
+            
+            // Update progress
+            completedLevels = Math.max(completedLevels, level);
+            totalPauseTime += duration;
+            pyramidScore += level * 10; // Score based on level difficulty
+            
+            updateProgress();
+            showPauseFeedback(level, duration);
+        } else {
+            alert('Complete the previous level first!');
+        }
+    }
+
+    function startPauseTimer() {
+        if (pauseTimerInterval) return;
+        
+        pauseStartTime = Date.now();
+        document.getElementById('start-pause-btn').disabled = true;
+        document.getElementById('stop-pause-btn').disabled = false;
+        
+        pauseTimerInterval = setInterval(() => {
+            currentPauseDuration = (Date.now() - pauseStartTime) / 1000;
+            document.getElementById('pause-timer').textContent = currentPauseDuration.toFixed(1) + 's';
+        }, 100);
+    }
+
+    function stopPauseTimer() {
+        if (!pauseTimerInterval) return;
+        
+        clearInterval(pauseTimerInterval);
+        pauseTimerInterval = null;
+        
+        document.getElementById('start-pause-btn').disabled = false;
+        document.getElementById('stop-pause-btn').disabled = true;
+        
+        // Check if pause duration matches any level
+        const levels = {{ pyramid_levels|safe }};
+        let matchedLevel = null;
+        
+        for (let level of levels) {
+            if (Math.abs(currentPauseDuration - level.pause_duration) <= 0.5) {
+                matchedLevel = level;
+                break;
+            }
+        }
+        
+        if (matchedLevel) {
+            addPause(matchedLevel.level, matchedLevel.pause_duration);
+        } else {
+            showPauseFeedback(0, currentPauseDuration);
+        }
+        
+        // Reset timer display
+        setTimeout(() => {
+            document.getElementById('pause-timer').textContent = '0.0s';
+            currentPauseDuration = 0;
+        }, 2000);
+    }
+
+    function updateProgress() {
+        document.getElementById('completed-levels').textContent = completedLevels;
+        document.getElementById('total-pause-time').textContent = totalPauseTime.toFixed(1) + 's';
+        document.getElementById('pyramid-score').textContent = pyramidScore;
+        
+        const progressPercentage = (completedLevels / 5) * 100;
+        document.getElementById('progress-percentage').textContent = Math.round(progressPercentage) + '%';
+        document.getElementById('progress-bar').style.width = progressPercentage + '%';
+    }
+
+    function showPauseFeedback(level, duration) {
+        let message = '';
+        if (level > 0) {
+            message = `Great ${duration}s pause! Level ${level} completed!`;
+            if (level < 5) {
+                message += ' Try the next level!';
+            } else {
+                message += ' Pyramid complete!';
+            }
+        } else {
+            message = `Nice ${duration.toFixed(1)}s pause! Try to match a pyramid level.`;
+        }
+        
+        // Show temporary feedback
+        const feedbackDiv = document.createElement('div');
+        feedbackDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+        feedbackDiv.textContent = message;
+        document.body.appendChild(feedbackDiv);
+        
+        setTimeout(() => {
+            feedbackDiv.remove();
+        }, 3000);
+    }
+
+    function startRecording() {
+        if (recordingActive) return;
+        
+        recordingActive = true;
+        document.getElementById('record-btn').textContent = 'Recording...';
+        document.getElementById('record-btn').disabled = true;
+        document.getElementById('recording-status').textContent = 'Recording your speech with pauses...';
+        
+        drillComponents.startMic({
+            onStart: function() {
+                console.log('Pyramid recording started');
+            },
+            onStop: function(audioBlob, audioUrl) {
+                recordingActive = false;
+                document.getElementById('record-btn').textContent = 'Record Your Speech';
+                document.getElementById('record-btn').disabled = false;
+                document.getElementById('recording-status').textContent = 'Recording complete!';
+                
+                // Show audio playback
+                const audioPlayer = document.getElementById('audio-player');
+                audioPlayer.querySelector('audio').src = audioUrl;
+                audioPlayer.classList.remove('hidden');
+                
+                // Show feedback buttons
+                drillComponents.showFeedback('feedback-buttons', function(rating) {
+                    console.log('Pyramid feedback:', rating);
+                });
+            },
+            onError: function(error) {
+                alert('Error accessing microphone: ' + error.message);
+                recordingActive = false;
+                document.getElementById('record-btn').textContent = 'Record Your Speech';
+                document.getElementById('record-btn').disabled = false;
+            }
+        });
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        updateProgress();
+    });
+</script>
+{% endblock %}
