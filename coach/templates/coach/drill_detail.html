@@ -1,0 +1,3196 @@
+{% extends 'coach/base.html' %}
+{% load static %}
+
+{% block title %}{{ drill.name }} - Verbal Coach{% endblock %}
+
+{% block extra_css %}
+<!-- Modern Drill Template v2.0 - Cache buster -->
+<style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        --warning-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        --info-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+    
+    body.bg-gray-50 {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%) !important;
+        min-height: 100vh;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%) !important;
+        min-height: 100vh;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    
+    .drill-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    
+    .drill-header {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 2rem;
+        padding: 3rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        text-align: center;
+    }
+    
+    .drill-header h1 {
+        font-size: 3rem;
+        font-weight: 900;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 1rem;
+    }
+    
+    .drill-header .description {
+        font-size: 1.25rem;
+        color: #666;
+        margin-bottom: 1.5rem;
+    }
+    
+    .skill-badge {
+        display: inline-block;
+        padding: 0.5rem 1.5rem;
+        border-radius: 2rem;
+        font-weight: 600;
+        margin: 0.25rem;
+    }
+    
+    .skill-badge.pronunciation {
+        background: linear-gradient(135deg, #11998e, #38ef7d);
+        color: white;
+    }
+    
+    .skill-badge.pacing {
+        background: linear-gradient(135deg, #4facfe, #00f2fe);
+        color: white;
+    }
+    
+    .skill-badge.filler_words {
+        background: linear-gradient(135deg, #f093fb, #f5576c);
+        color: white;
+    }
+    
+    .practice-panel {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 2rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+    
+    .practice-arena {
+        min-height: 400px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 3px dashed #e0e0e0;
+        border-radius: 1.5rem;
+        padding: 3rem;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+    
+    .practice-arena.recording {
+        border-color: #f5576c;
+        background: rgba(245, 87, 108, 0.05);
+    }
+    
+    .practice-arena.playing {
+        border-color: #38ef7d;
+        background: rgba(56, 239, 125, 0.05);
+    }
+    
+    .btn-primary {
+        background: var(--primary-gradient);
+        border: none;
+        border-radius: 2rem;
+        padding: 1rem 3rem;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        display: inline-block;
+        min-width: 250px;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
+    }
+    
+    .btn-primary:active {
+        transform: translateY(0);
+    }
+    
+    .btn-primary.recording {
+        background: linear-gradient(135deg, #f5576c, #f093fb);
+        animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin: 2rem 0;
+        animation: fadeIn 0.5s ease-in;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .stat-card {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        transition: all 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        border-color: rgba(102, 126, 234, 0.6);
+    }
+    
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: 900;
+        margin-bottom: 0.5rem;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .stat-label {
+        font-size: 0.875rem;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+    }
+    
+    .timer-display {
+        font-size: 4rem;
+        font-weight: 900;
+        font-family: 'Courier New', monospace;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin: 1rem 0;
+    }
+    
+    .timer-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin: 1rem 0;
+    }
+    
+    .timer-btn {
+        background: rgba(102, 126, 234, 0.1);
+        border: 2px solid #667eea;
+        border-radius: 1rem;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        color: #667eea;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .timer-btn:hover {
+        background: #667eea;
+        color: white;
+        transform: translateY(-2px);
+    }
+    
+    .waveform-canvas {
+        width: 100%;
+        height: 150px;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        border-radius: 1rem;
+        margin: 1rem 0;
+        border: 2px solid rgba(102, 126, 234, 0.3);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .hidden {
+        display: none !important;
+    }
+    
+    .completion-form {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 2rem;
+        padding: 2rem;
+        margin-top: 2rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #333;
+    }
+    
+    .form-group input,
+    .form-group textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 0.75rem;
+        font-size: 1rem;
+        transition: border-color 0.3s ease;
+    }
+    
+    .form-group input:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    
+    .instructions-panel {
+        background: rgba(79, 172, 254, 0.1);
+        border-left: 4px solid #4facfe;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+    }
+    
+    .instructions-panel h3 {
+        color: #4facfe;
+        margin-bottom: 1rem;
+    }
+    
+    .instructions-panel ol {
+        margin-left: 1.5rem;
+    }
+    
+    .instructions-panel li {
+        margin-bottom: 0.5rem;
+        color: #555;
+    }
+    
+    .feedback-message {
+        padding: 1rem;
+        border-radius: 1rem;
+        margin: 1rem 0;
+        font-weight: 600;
+    }
+    
+    .feedback-message.success {
+        background: rgba(56, 239, 125, 0.1);
+        border-left: 4px solid #38ef7d;
+        color: #11998e;
+    }
+    
+    .feedback-message.info {
+        background: rgba(79, 172, 254, 0.1);
+        border-left: 4px solid #4facfe;
+        color: #0066cc;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="drill-container">
+    <!-- Drill Header -->
+    <div class="drill-header">
+        <h1>{{ drill.name }}</h1>
+        <p class="description">{{ drill.description }}</p>
+        <div>
+            <span class="skill-badge {{ drill.skill_type }}">{{ drill.get_skill_type_display }}</span>
+            {% if drill.cause %}
+            <span class="skill-badge">{{ drill.get_cause_display }}</span>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Practice Panel -->
+    <div class="practice-panel">
+                  <!-- Instructions -->
+          {% if drill.interactive_elements.prompts %}
+          <div class="instructions-panel">
+              <h3>📋 Instructions</h3>
+              <ol>
+                  {% for prompt in drill.interactive_elements.prompts %}
+                  <li>{{ prompt }}</li>
+                  {% endfor %}
+              </ol>
+          </div>
+          {% endif %}
+
+          <!-- Drill-Specific Interactive Content -->
+          {% if drill_content_type %}
+          
+          <!-- Poem Echo Challenge -->
+          {% if drill_content_type == 'poem_echo' and mlk_excerpt %}
+          <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl mb-6 border-2 border-blue-200">
+              <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <span class="mr-2">📖</span> Read This MLK Excerpt Aloud
+              </h3>
+              <div class="bg-white rounded-lg p-6 mb-4 shadow-md">
+                  <p id="practice-text-display" class="text-xl text-gray-800 leading-relaxed font-medium">{{ mlk_excerpt }}</p>
+              </div>
+              {% if phonetic_tips %}
+              <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg mb-4">
+                  <h4 class="font-semibold text-yellow-800 mb-3 flex items-center">
+                      <span class="mr-2">💡</span> Pronunciation Tips
+                  </h4>
+                  <ul class="space-y-2">
+                      {% for tip in phonetic_tips %}
+                      <li class="text-sm text-yellow-700">{{ tip }}</li>
+                      {% endfor %}
+                  </ul>
+                  <button onclick="highlightDifficultWords()" class="mt-3 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg text-sm font-semibold transition-colors">
+                      Highlight Difficult Words
+                  </button>
+              </div>
+              {% endif %}
+              <button onclick="getNewExcerpt()" class="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg text-sm font-semibold transition-colors">
+                  🔄 Get New Excerpt
+              </button>
+          </div>
+          {% endif %}
+
+          <!-- Shadow Superhero -->
+          {% if drill_content_type == 'shadow_superhero' and selected_script %}
+          <div class="bg-gradient-to-r from-red-50 to-orange-50 p-6 rounded-xl mb-6 border-2 border-red-200">
+              <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <span class="mr-2">🎤</span> Shadow Superhero - TED Talk Excerpt
+              </h3>
+              <div class="bg-white rounded-lg p-6 mb-4 shadow-md">
+                  <h4 class="text-lg font-bold text-red-800 mb-3">{{ selected_script.title }}</h4>
+                  <p id="practice-text-display" class="text-lg text-gray-800 leading-relaxed mb-4">{{ selected_script.text }}</p>
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                      <div class="bg-gray-50 p-3 rounded-lg">
+                          <div class="text-sm text-gray-600">⏱️ Duration</div>
+                          <div class="text-lg font-bold text-gray-800">~{{ selected_script.duration }}s</div>
+                      </div>
+                      <div class="bg-gray-50 p-3 rounded-lg">
+                          <div class="text-sm text-gray-600">🎯 Target WPM</div>
+                          <div class="text-lg font-bold text-gray-800">{{ selected_script.wpm }}</div>
+                      </div>
+                      <div class="bg-gray-50 p-3 rounded-lg">
+                          <div class="text-sm text-gray-600">🎯 Focus</div>
+                          <div class="text-sm font-bold text-gray-800">{{ selected_script.focus }}</div>
+                      </div>
+                  </div>
+                  <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg mb-4">
+                      <h5 class="font-bold text-yellow-800 mb-2">📋 Instructions:</h5>
+                      <ol class="text-sm text-yellow-800 space-y-1 list-decimal list-inside">
+                          <li>Read the excerpt carefully first</li>
+                          <li>Try to match the pace ({{ selected_script.wpm }} WPM)</li>
+                          <li>Record yourself speaking the text</li>
+                          <li>Compare your waveform with the target pace</li>
+                          <li>Practice until you match the rhythm!</li>
+                      </ol>
+                  </div>
+                  <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg">
+                      <p class="text-sm text-blue-800">
+                          <strong>💡 Shadowing Tip:</strong> Listen first, then try to speak along with the same pace and rhythm. The waveform comparison will help you see if you're matching the pace!
+                      </p>
+                  </div>
+              </div>
+              <button onclick="getNewScript()" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold transition-colors">
+                  🔄 New TED Script
+              </button>
+          </div>
+          {% endif %}
+
+          <!-- Silence Master -->
+          {% if drill_content_type == 'silence_master' and current_challenge %}
+          <div class="bg-gradient-to-r from-green-50 to-teal-50 p-6 rounded-xl mb-6 border-2 border-green-200">
+              <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <span class="mr-2">🔇</span> Silence Master Challenge
+              </h3>
+              <div class="bg-white rounded-lg p-6 mb-4 shadow-md">
+                  <h4 class="text-lg font-bold text-green-800 mb-3">{{ current_challenge.text }}</h4>
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                      <div class="bg-gray-50 p-3 rounded-lg">
+                          <div class="text-sm text-gray-600">⏱️ Time Limit</div>
+                          <div class="text-lg font-bold text-gray-800">{{ current_challenge.time_limit }}s</div>
+                      </div>
+                      <div class="bg-gray-50 p-3 rounded-lg">
+                          <div class="text-sm text-gray-600">🎯 Difficulty</div>
+                          <div class="text-lg font-bold {% if current_challenge.difficulty == 'medium' %}text-yellow-600{% elif current_challenge.difficulty == 'hard' %}text-red-600{% else %}text-gray-600{% endif %}">{{ current_challenge.difficulty|title }}</div>
+                      </div>
+                      <div class="bg-gray-50 p-3 rounded-lg">
+                          <div class="text-sm text-gray-600">❌ Fillers to Avoid</div>
+                          <div class="text-sm font-bold text-gray-800">{{ current_challenge.fillers_to_avoid|join:", " }}</div>
+                      </div>
+                  </div>
+                  <div id="timer-display" class="text-center mb-4 hidden">
+                      <div class="text-4xl font-bold text-green-600" id="countdown-timer">{{ current_challenge.time_limit }}</div>
+                      <div class="text-sm text-gray-600">seconds remaining</div>
+                  </div>
+                  <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg mb-4">
+                      <p class="text-sm text-yellow-800">
+                          <strong>💡 Remember:</strong> Replace fillers with intentional pauses. Silence is powerful! Use the timer to practice speaking without fillers.
+                      </p>
+                  </div>
+                  <button id="start-timer-btn" onclick="startSilenceTimer({{ current_challenge.time_limit }})" class="w-full px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold text-lg transition-colors">
+                      ⏱️ Start Challenge
+                  </button>
+              </div>
+              <button onclick="getNewChallenge()" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-semibold transition-colors">
+                  🔄 New Challenge
+              </button>
+          </div>
+          {% endif %}
+
+          <!-- Filler Zap Game -->
+          {% if drill_content_type == 'filler_zap' and current_topic %}
+          <div class="bg-gradient-to-r from-red-50 to-orange-50 p-6 rounded-xl mb-6 border-2 border-red-200">
+              <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <span class="mr-2">⚡</span> Filler Zap Game
+              </h3>
+              <div class="bg-white rounded-lg p-6 mb-4 shadow-md">
+                  <h4 class="text-lg font-bold text-red-800 mb-3">Topic: {{ current_topic.text }}</h4>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div class="bg-gray-50 p-3 rounded-lg">
+                          <div class="text-sm text-gray-600">⏱️ Time Limit</div>
+                          <div class="text-lg font-bold text-gray-800">{{ current_topic.time_limit }}s</div>
+                      </div>
+                      <div class="bg-gray-50 p-3 rounded-lg">
+                          <div class="text-sm text-gray-600">🎯 Difficulty</div>
+                          <div class="text-lg font-bold {% if current_topic.difficulty == 'medium' %}text-yellow-600{% elif current_topic.difficulty == 'hard' %}text-red-600{% else %}text-green-600{% endif %}">{{ current_topic.difficulty|title }}</div>
+                      </div>
+                  </div>
+                  <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg mb-4">
+                      <h5 class="font-bold text-red-800 mb-2">❌ Target Fillers to Zap:</h5>
+                      <div id="target-fillers" class="flex flex-wrap gap-2">
+                          {% for filler in target_fillers %}
+                          <span class="px-3 py-2 bg-red-100 text-red-800 rounded-lg font-bold text-sm">{{ filler }}</span>
+                          {% endfor %}
+                      </div>
+                  </div>
+                  <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg mb-4">
+                      <p class="text-sm text-yellow-800">
+                          <strong>💡 How to Play:</strong> Speak about the topic for {{ current_topic.time_limit }} seconds. Avoid using any of the target fillers above. Each filler you use reduces your score!
+                      </p>
+                  </div>
+                  <div id="score-display" class="text-center mb-4 hidden">
+                      <div class="text-3xl font-bold text-green-600" id="current-score">0</div>
+                      <div class="text-sm text-gray-600">points</div>
+                      <div class="text-sm text-red-600 mt-2" id="filler-count">Fillers detected: 0</div>
+                  </div>
+                  <button id="start-zap-btn" onclick="startFillerZap()" class="w-full px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold text-lg transition-colors">
+                      ⚡ Start Zap Game
+                  </button>
+              </div>
+              <button onclick="getNewFillerZapTopic()" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold transition-colors">
+                  🎲 New Topic
+              </button>
+          </div>
+          {% endif %}
+
+          <!-- Silent Switcheroo -->
+          {% if drill_content_type == 'silent_switcheroo' and current_sentence %}
+          <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl mb-6 border-2 border-blue-200">
+              <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <span class="mr-2">🔄</span> Silent Switcheroo
+              </h3>
+              <div class="bg-white rounded-lg p-6 mb-4 shadow-md">
+                  <div class="mb-6">
+                      <h4 class="text-lg font-bold text-blue-800 mb-3">Original Sentence (with fillers):</h4>
+                      <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg mb-4">
+                          <p id="original-sentence" class="text-lg text-gray-800 leading-relaxed font-medium">{{ current_sentence.original }}</p>
+                      </div>
+                      <div class="mb-4">
+                          <h5 class="font-semibold text-blue-700 mb-2">Fillers Found:</h5>
+                          <div id="fillers-list" class="flex flex-wrap gap-2 mb-4">
+                              {% for filler in current_sentence.fillers %}
+                              <span class="px-3 py-2 bg-red-100 text-red-800 rounded-lg font-bold text-sm">{{ filler }}</span>
+                              {% endfor %}
+                          </div>
+                      </div>
+                      <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg mb-4">
+                          <h5 class="font-bold text-yellow-800 mb-2">📋 Instructions:</h5>
+                          <ol class="text-sm text-yellow-800 space-y-1 list-decimal list-inside">
+                              <li>Identify all filler words in the sentence above</li>
+                              <li>Rewrite the sentence without fillers</li>
+                              <li>Click "Show Answer" to see the cleaned version</li>
+                              <li>Practice saying the cleaned version</li>
+                          </ol>
+                      </div>
+                      <div class="mb-4">
+                          <label class="block text-sm font-semibold text-blue-700 mb-2">Your Rewritten Sentence:</label>
+                          <textarea id="rewritten-sentence" class="w-full px-4 py-3 border-2 border-blue-300 rounded-lg text-lg" rows="3" placeholder="Type your filler-free sentence here..."></textarea>
+                      </div>
+                      <div class="flex items-center justify-between mb-4">
+                          <button onclick="checkRewrittenSentence()" class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors">
+                              ✓ Check Answer
+                          </button>
+                          <button onclick="showAnswer()" class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition-colors">
+                              👁️ Show Answer
+                          </button>
+                      </div>
+                      <div id="answer-display" class="hidden">
+                          <h5 class="font-semibold text-green-700 mb-2">✅ Cleaned Sentence:</h5>
+                          <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-lg">
+                              <p id="cleaned-sentence" class="text-lg text-gray-800 leading-relaxed font-medium">{{ current_sentence.cleaned }}</p>
+                          </div>
+                      </div>
+                      <div id="feedback-display" class="mt-4 hidden"></div>
+                      <div class="mt-4">
+                          <span class="text-sm font-semibold text-blue-700">Difficulty:</span>
+                          <span class="ml-2 px-2 py-1 rounded text-sm font-bold {% if current_sentence.difficulty == 'medium' %}bg-yellow-100 text-yellow-800{% elif current_sentence.difficulty == 'hard' %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %}">
+                              {{ current_sentence.difficulty|title }}
+                          </span>
+                      </div>
+                  </div>
+              </div>
+              <button onclick="getNewSentence()" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-semibold transition-colors">
+                  🔄 New Sentence
+              </button>
+          </div>
+          {% endif %}
+
+          <!-- Pause Power-Up -->
+          {% if drill_content_type == 'pause_powerup' and pause_exercises %}
+          <div class="bg-gradient-to-r from-yellow-50 to-orange-50 p-6 rounded-xl mb-6 border-2 border-yellow-200">
+              <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <span class="mr-2">⏸️</span> Pause Power-Up
+              </h3>
+              <div class="bg-white rounded-lg p-6 mb-4 shadow-md">
+                  <div class="mb-6">
+                      <h4 class="text-lg font-bold text-yellow-800 mb-3">Practice Text:</h4>
+                      <div class="bg-gray-50 p-4 rounded-lg border-2 border-gray-200 mb-4">
+                          <p id="pause-practice-text" class="text-lg text-gray-800 leading-relaxed font-medium">{{ practice_text }}</p>
+                      </div>
+                  </div>
+                  <div class="mb-6">
+                      <h4 class="text-lg font-bold text-yellow-800 mb-3">Pause Levels:</h4>
+                      <div class="space-y-3 mb-4">
+                          {% for exercise in pause_exercises %}
+                          <div class="{% if exercise.color == 'blue' %}bg-blue-50 border-blue-400{% elif exercise.color == 'yellow' %}bg-yellow-50 border-yellow-400{% elif exercise.color == 'red' %}bg-red-50 border-red-400{% else %}bg-gray-50 border-gray-400{% endif %} border-l-4 p-4 rounded-lg cursor-pointer hover:shadow-md transition-all" onclick="practicePauseLevel({{ exercise.duration }}, '{{ exercise.icon }}')">
+                              <div class="flex items-center justify-between">
+                                  <div class="flex items-center space-x-3">
+                                      <span class="text-2xl">{{ exercise.icon }}</span>
+                                      <div>
+                                          <div class="font-bold text-gray-800">{{ exercise.duration }} second{{ exercise.duration|pluralize }} pause</div>
+                                          <div class="text-sm text-gray-600">{{ exercise.description }}</div>
+                                      </div>
+                                  </div>
+                                  <button class="px-4 py-2 {% if exercise.color == 'blue' %}bg-blue-500 hover:bg-blue-600{% elif exercise.color == 'yellow' %}bg-yellow-500 hover:bg-yellow-600{% elif exercise.color == 'red' %}bg-red-500 hover:bg-red-600{% else %}bg-gray-500 hover:bg-gray-600{% endif %} text-white rounded-lg text-sm font-semibold">
+                                      Practice
+                                  </button>
+                              </div>
+                          </div>
+                          {% endfor %}
+                      </div>
+                      <div id="pause-timer" class="hidden text-center mb-4">
+                          <div class="text-4xl font-bold text-yellow-600" id="pause-countdown">0</div>
+                          <div class="text-sm text-gray-600">pause in progress...</div>
+                      </div>
+                  </div>
+                  <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg">
+                      <p class="text-sm text-blue-800">
+                          <strong>💡 How to Practice:</strong> Click a pause level to practice. Replace [PAUSE] markers in the text with actual pauses of the selected duration. The timer will guide you!
+                      </p>
+                  </div>
+              </div>
+              <button onclick="getNewPauseText()" class="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg text-sm font-semibold transition-colors">
+                  🔄 New Practice Text
+              </button>
+          </div>
+          {% endif %}
+
+          <!-- Filler Hunt Mirror Maze -->
+          {% if drill_content_type == 'filler_hunt' and current_text %}
+          <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl mb-6 border-2 border-purple-200">
+              <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <span class="mr-2">🔍</span> Filler Hunt Mirror Maze
+              </h3>
+              <div class="bg-white rounded-lg p-6 mb-4 shadow-md">
+                  <div class="mb-6">
+                      <h4 class="text-lg font-bold text-purple-800 mb-3">Find the Hidden Fillers!</h4>
+                      <div class="bg-gray-50 p-4 rounded-lg border-2 border-gray-200 mb-4">
+                          <p id="hunt-text-display" class="text-lg text-gray-800 leading-relaxed font-medium">{{ current_text.text }}</p>
+                      </div>
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                          <div class="bg-gray-50 p-3 rounded-lg">
+                              <div class="text-sm text-gray-600">🎯 Fillers Hidden</div>
+                              <div class="text-lg font-bold text-gray-800">{{ current_text.fillers_count }}</div>
+                          </div>
+                          <div class="bg-gray-50 p-3 rounded-lg">
+                              <div class="text-sm text-gray-600">📊 Difficulty</div>
+                              <div class="text-lg font-bold {% if current_text.difficulty == 'hard' %}text-red-600{% elif current_text.difficulty == 'very hard' %}text-red-800{% else %}text-yellow-600{% endif %}">{{ current_text.difficulty|title }}</div>
+                          </div>
+                      </div>
+                      <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg mb-4">
+                          <h5 class="font-bold text-yellow-800 mb-2">📋 Instructions:</h5>
+                          <ol class="text-sm text-yellow-800 space-y-1 list-decimal list-inside">
+                              <li>Read the sentence above carefully</li>
+                              <li>Click on each filler word you find</li>
+                              <li>Selected fillers will be highlighted</li>
+                              <li>Click "Check Answers" when you're done</li>
+                              <li>See how many you found correctly!</li>
+                          </ol>
+                      </div>
+                      <div class="mb-4">
+                          <label class="block text-sm font-semibold text-purple-700 mb-2">Click on filler words in the text above:</label>
+                          <div id="selected-fillers" class="flex flex-wrap gap-2 min-h-12 bg-gray-50 p-3 rounded-lg border-2 border-dashed border-gray-300">
+                              <span class="text-gray-400 text-sm">Selected fillers will appear here...</span>
+                          </div>
+                      </div>
+                      <div class="flex items-center justify-between mb-4">
+                          <div>
+                              <span class="text-sm font-semibold text-purple-700">Found:</span>
+                              <span id="found-count" class="ml-2 text-2xl font-bold text-purple-600">0</span>
+                              <span class="text-sm text-gray-600">/ {{ current_text.fillers_count }}</span>
+                          </div>
+                          <button onclick="checkFillerHunt()" class="px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold transition-colors">
+                              ✓ Check Answers
+                          </button>
+                      </div>
+                      <div id="hunt-feedback" class="hidden"></div>
+                      <div id="correct-fillers" class="hidden mt-4">
+                          <h5 class="font-semibold text-green-700 mb-2">✅ All Fillers:</h5>
+                          <div class="flex flex-wrap gap-2">
+                              {% for filler in current_text.fillers %}
+                              <span class="px-3 py-2 bg-green-100 text-green-800 rounded-lg font-bold text-sm">{{ filler }}</span>
+                              {% endfor %}
+                          </div>
+                      </div>
+                  </div>
+              </div>
+              <button onclick="getNewHuntText()" class="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-sm font-semibold transition-colors">
+                  🔄 New Text
+              </button>
+          </div>
+          {% endif %}
+
+          <!-- Word Swap Whirlwind -->
+          {% if drill_content_type == 'word_swap' and current_topic %}
+          <div class="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 rounded-xl mb-6 border-2 border-indigo-200">
+              <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <span class="mr-2">🎯</span> Word Swap Whirlwind
+              </h3>
+              <div class="bg-white rounded-lg p-6 mb-4 shadow-md">
+                  <h4 class="text-lg font-bold text-indigo-800 mb-3">Topic: {{ current_topic.text }}</h4>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div class="bg-gray-50 p-3 rounded-lg">
+                          <div class="text-sm text-gray-600">⏱️ Time Limit</div>
+                          <div class="text-lg font-bold text-gray-800">{{ current_topic.time_limit }}s</div>
+                      </div>
+                      <div class="bg-gray-50 p-3 rounded-lg">
+                          <div class="text-sm text-gray-600">🎯 Difficulty</div>
+                          <div class="text-lg font-bold {% if current_topic.difficulty == 'medium' %}text-yellow-600{% else %}text-green-600{% endif %}">{{ current_topic.difficulty|title }}</div>
+                      </div>
+                  </div>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div class="bg-red-50 p-4 rounded-lg border-2 border-red-300">
+                          <p class="text-sm text-red-700 mb-1">❌ Avoid This Filler:</p>
+                          <p class="text-2xl font-bold text-red-800">{{ selected_filler }}</p>
+                      </div>
+                      <div class="bg-green-50 p-4 rounded-lg border-2 border-green-300">
+                          <p class="text-sm text-green-700 mb-1">✅ Use Instead:</p>
+                          <p class="text-xl font-bold text-green-800">{{ selected_replacement }}</p>
+                      </div>
+                  </div>
+                  <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg mb-4">
+                      <p class="text-sm text-yellow-800">
+                          <strong>💡 Challenge:</strong> Speak about the topic for {{ current_topic.time_limit }} seconds. Whenever you feel like saying "{{ selected_filler }}", replace it with "{{ selected_replacement }}" instead!
+                      </p>
+                  </div>
+              </div>
+              <button onclick="getNewTopic()" class="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg text-sm font-semibold transition-colors">
+                  🎲 New Topic
+              </button>
+          </div>
+          {% endif %}
+
+          <!-- Echo Elimination Echo -->
+          {% if drill_content_type == 'echo_elimination' and current_pattern %}
+          <div class="bg-gradient-to-r from-cyan-50 to-teal-50 p-6 rounded-xl mb-6 border-2 border-cyan-200">
+              <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <span class="mr-2">🔊</span> Echo Elimination Echo
+              </h3>
+              <div class="bg-white rounded-lg p-6 mb-4 shadow-md">
+                  <div class="mb-6">
+                      <h4 class="text-lg font-bold text-cyan-800 mb-3">Echo Pattern:</h4>
+                      <div class="bg-gray-50 p-4 rounded-lg border-2 border-gray-200 mb-4">
+                          <p id="echo-pattern-display" class="text-lg text-gray-800 leading-relaxed font-medium">{{ current_pattern.text }}</p>
+                      </div>
+                      <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg mb-4">
+                          <h5 class="font-bold text-yellow-800 mb-2">📋 Instructions:</h5>
+                          <ol class="text-sm text-yellow-800 space-y-1 list-decimal list-inside">
+                              <li>Read the pattern above (ignore the "Repeat after me:" part)</li>
+                              <li>Record yourself speaking the cleaned version</li>
+                              <li>Repeat it multiple times without adding fillers</li>
+                              <li>Focus on clear articulation and intentional pauses</li>
+                          </ol>
+                      </div>
+                      <div class="mb-4">
+                          <span class="text-sm font-semibold text-cyan-700">Difficulty:</span>
+                          <span class="ml-2 px-2 py-1 rounded text-sm font-bold {% if current_pattern.difficulty == 'medium' %}bg-yellow-100 text-yellow-800{% elif current_pattern.difficulty == 'hard' %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %}">
+                              {{ current_pattern.difficulty|title }}
+                          </span>
+                      </div>
+                      <div id="cleaned-pattern" class="hidden mt-4">
+                          <h5 class="font-semibold text-green-700 mb-2">✅ Cleaned Version (what to say):</h5>
+                          <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-lg">
+                              <p id="cleaned-text" class="text-lg text-gray-800 leading-relaxed font-medium">{{ current_pattern.cleaned }}</p>
+                          </div>
+                      </div>
+                      <button onclick="showCleanedPattern()" class="mt-4 px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-semibold transition-colors">
+                          👁️ Show Cleaned Version
+                      </button>
+                  </div>
+              </div>
+              <button onclick="getNewEchoPattern()" class="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg text-sm font-semibold transition-colors">
+                  🔄 New Pattern
+              </button>
+          </div>
+          {% endif %}
+
+          <!-- Mirror Mimic -->
+          {% if drill_content_type == 'mirror_mimic' and selected_twister %}
+          <div class="bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-xl mb-6 border-2 border-purple-200">
+              <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <span class="mr-2">🔄</span> Tongue Twister Challenge
+              </h3>
+              <div class="bg-white rounded-lg p-6 mb-4 shadow-md">
+                  <p id="practice-text-display" class="text-2xl text-gray-800 leading-relaxed font-medium text-center">{{ selected_twister }}</p>
+              </div>
+              <p class="text-sm text-gray-600 text-center mb-4">Try saying this 5 times fast without mistakes!</p>
+              <button onclick="getNewTwister()" class="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-sm font-semibold transition-colors">
+                  🔄 New Twister
+              </button>
+          </div>
+          {% endif %}
+
+          <!-- Metronome Rhythm Race -->
+          {% if drill_content_type == 'metronome' and practice_text %}
+          <div class="bg-gradient-to-r from-blue-50 to-cyan-50 p-6 rounded-xl mb-6 border-2 border-blue-200">
+              <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <span class="mr-2">🎵</span> Metronome Rhythm Race
+              </h3>
+              <div class="bg-white rounded-lg p-6 mb-4 shadow-md">
+                  <p id="practice-text-display" class="text-lg text-gray-800 leading-relaxed mb-4">{{ practice_text }}</p>
+                  <div class="flex items-center justify-center space-x-4 mb-4">
+                      <label class="text-sm font-semibold text-gray-700">BPM:</label>
+                      <select id="bpm-select" class="px-4 py-2 border border-gray-300 rounded-lg text-lg font-bold">
+                          {% for bpm in bpm_options %}
+                          <option value="{{ bpm }}" {% if bpm == default_bpm %}selected{% endif %}>{{ bpm }} BPM</option>
+                          {% endfor %}
+                      </select>
+                      <button id="metronome-toggle" onclick="toggleMetronome()" class="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors">
+                          ▶️ Start Metronome
+                      </button>
+                  </div>
+                  <div id="metronome-beat" class="hidden text-center">
+                      <div id="beat-visual" class="w-16 h-16 mx-auto bg-blue-500 rounded-full transition-transform duration-100"></div>
+                      <p class="mt-2 text-sm text-gray-600">Tap along with the beat!</p>
+                  </div>
+              </div>
+              <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
+                  <p class="text-sm text-yellow-800">
+                      <strong>💡 Tip:</strong> Speak each word in rhythm with the metronome. Start slow, then increase BPM as you improve!
+                  </p>
+              </div>
+              <button onclick="getNewMetronomeText()" class="mt-4 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-semibold transition-colors">
+                  🔄 New Practice Text
+              </button>
+          </div>
+          {% endif %}
+
+          <!-- Pause Pyramid Builder -->
+          {% if drill_content_type == 'pause_pyramid' and pyramid_levels %}
+          <div class="bg-gradient-to-r from-green-50 to-teal-50 p-6 rounded-xl mb-6 border-2 border-green-200">
+              <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <span class="mr-2">🏔️</span> Pause Pyramid Builder
+              </h3>
+              <div class="bg-white rounded-lg p-6 mb-4 shadow-md">
+                  <p id="practice-text-display" class="text-lg text-gray-800 leading-relaxed mb-4">{{ practice_text }}</p>
+                  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                      {% for level in pyramid_levels %}
+                      <div class="{% if level.level == 1 %}bg-green-100{% elif level.level == 2 %}bg-green-200{% elif level.level == 3 %}bg-green-300{% elif level.level == 4 %}bg-green-400{% else %}bg-green-100{% endif %} p-4 rounded-lg border-2 border-green-300 text-center cursor-pointer hover:shadow-lg transition-all" onclick="practicePauseLevel({{ level.level }}, {{ level.pause_duration }})">
+                          <div class="text-2xl mb-2">{{ level.icon }}</div>
+                          <div class="font-bold text-gray-800">Level {{ level.level }}</div>
+                          <div class="text-sm text-gray-600">{{ level.text }}</div>
+                      </div>
+                      {% endfor %}
+                  </div>
+                  <div id="pause-timer" class="hidden text-center">
+                      <div class="text-4xl font-bold text-green-600 mb-2" id="pause-countdown">3</div>
+                      <p class="text-sm text-gray-600">Pause in progress...</p>
+                  </div>
+              </div>
+              <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg">
+                  <p class="text-sm text-blue-800">
+                      <strong>💡 Strategy:</strong> Practice each level. Start with short pauses, build up to strategic pauses for maximum impact.
+                  </p>
+              </div>
+              <button onclick="getNewPyramidText()" class="mt-4 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-semibold transition-colors">
+                  🔄 New Practice Text
+              </button>
+          </div>
+          {% endif %}
+
+          <!-- Slow-Motion Story Slam -->
+          {% if drill_content_type == 'slow_motion' and selected_story %}
+          <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl mb-6 border-2 border-purple-200">
+              <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <span class="mr-2">🐌</span> Slow-Motion Story Slam
+              </h3>
+              <div class="bg-white rounded-lg p-6 mb-4 shadow-md">
+                  <h4 class="text-lg font-bold text-purple-800 mb-3">{{ selected_story.title }}</h4>
+                  <p id="practice-text-display" class="text-lg text-gray-800 leading-relaxed mb-4">{{ selected_story.text }}</p>
+                  <div class="flex items-center justify-center space-x-4 mb-4">
+                      <label class="text-sm font-semibold text-gray-700">Speed Factor:</label>
+                      <input type="range" id="speed-slider" min="0.3" max="1.0" step="0.1" value="{{ selected_story.speed_factor }}" class="w-48">
+                      <span id="speed-display" class="text-lg font-bold text-purple-600">{{ selected_story.speed_factor }}x</span>
+                  </div>
+                  <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
+                      <p class="text-sm text-yellow-800">
+                          <strong>💡 Remember:</strong> Speak at {{ selected_story.speed_factor }}x speed (half-speed). Focus on clarity and deliberate delivery.
+                      </p>
+                  </div>
+              </div>
+              <button onclick="getNewStory()" class="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-sm font-semibold transition-colors">
+                  🔄 New Story
+              </button>
+          </div>
+          {% endif %}
+
+          <!-- Beat Drop Dialogue -->
+          {% if drill_content_type == 'beat_drop' and selected_dialogue %}
+          <div class="bg-gradient-to-r from-orange-50 to-red-50 p-6 rounded-xl mb-6 border-2 border-orange-200">
+              <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <span class="mr-2">🎵</span> Beat Drop Dialogue
+              </h3>
+              <div class="bg-white rounded-lg p-6 mb-4 shadow-md">
+                  <h4 class="text-lg font-bold text-orange-800 mb-3">{{ selected_dialogue.title }}</h4>
+                  <div class="space-y-4 mb-4">
+                      <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400">
+                          <p class="text-sm text-blue-700 mb-1"><strong>Speaker 1:</strong></p>
+                          <p id="speaker1-text" class="text-lg text-gray-800">{{ selected_dialogue.speaker1 }}</p>
+                      </div>
+                      <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
+                          <p class="text-sm text-green-700 mb-1"><strong>Speaker 2:</strong></p>
+                          <p id="speaker2-text" class="text-lg text-gray-800">{{ selected_dialogue.speaker2 }}</p>
+                      </div>
+                  </div>
+                  <div class="flex items-center justify-center space-x-4 mb-4">
+                      <label class="text-sm font-semibold text-gray-700">BPM: {{ selected_dialogue.bpm }}</label>
+                      <button id="beat-toggle" onclick="toggleBeat()" class="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-semibold transition-colors">
+                          🎵 Start Beat
+                      </button>
+                  </div>
+                  <div id="beat-visualizer" class="hidden mt-4">
+                      <canvas id="beat-canvas" width="400" height="100" class="w-full border border-gray-300 rounded"></canvas>
+                      <p class="text-center text-sm text-gray-600 mt-2">Visualize the beats and sync your speech!</p>
+                  </div>
+              </div>
+              <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg">
+                  <p class="text-sm text-blue-800">
+                      <strong>💡 Sync Tip:</strong> Speak each line on the beat. Pause at [PAUSE] markers. Let the rhythm guide your delivery.
+                  </p>
+              </div>
+              <button onclick="getNewDialogue()" class="mt-4 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-semibold transition-colors">
+                  🔄 New Dialogue
+              </button>
+          </div>
+          {% endif %}
+
+          <!-- Timer Tag Team -->
+          {% if drill_content_type == 'timer_tag' and current_challenge %}
+          <div class="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 rounded-xl mb-6 border-2 border-indigo-200">
+              <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <span class="mr-2">⏱️</span> Timer Tag Team Challenge
+              </h3>
+              <div class="bg-white rounded-lg p-6 mb-4 shadow-md">
+                  <div class="text-center mb-4">
+                      <div class="text-6xl mb-2">{{ current_challenge.icon }}</div>
+                      <h4 class="text-2xl font-bold text-indigo-800 mb-2">{{ current_challenge.topic }}</h4>
+                      <div class="text-4xl font-bold text-indigo-600 mb-2" id="challenge-timer">{{ current_challenge.duration }}</div>
+                      <p class="text-sm text-gray-600">seconds to complete</p>
+                  </div>
+                  <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg mb-4">
+                      <p class="text-sm text-yellow-800">
+                          <strong>💡 Strategy:</strong> Plan your speech before starting. Use the full time, but don't rush. Quality over speed!
+                      </p>
+                  </div>
+                  <button id="timer-start-btn" onclick="startTimerChallenge({{ current_challenge.duration }})" class="w-full px-6 py-3 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg font-semibold text-lg transition-colors">
+                      ▶️ Start Challenge
+                  </button>
+                  <div id="timer-progress" class="hidden mt-4">
+                      <div class="w-full bg-gray-200 rounded-full h-4">
+                          <div id="timer-progress-bar" class="bg-indigo-600 h-4 rounded-full transition-all duration-1000" style="width: 100%"></div>
+                      </div>
+                  </div>
+              </div>
+              <button onclick="getNewChallenge()" class="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg text-sm font-semibold transition-colors">
+                  🎲 New Challenge
+              </button>
+          </div>
+          {% endif %}
+
+          <!-- Echo Chamber Escalation -->
+          {% if drill_content_type == 'echo_chamber' and escalation_levels %}
+          <div class="bg-gradient-to-r from-yellow-50 to-orange-50 p-6 rounded-xl mb-6 border-2 border-yellow-200">
+              <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <span class="mr-2">📈</span> Echo Chamber Escalation
+              </h3>
+              <div class="bg-white rounded-lg p-6 mb-4 shadow-md">
+                  <div class="mb-6">
+                      <h4 class="text-lg font-bold text-yellow-800 mb-3">Practice Text:</h4>
+                      <div id="practice-text-container" class="bg-gray-50 p-4 rounded-lg border-2 border-gray-200 mb-4">
+                          <p id="practice-text-display" class="text-lg text-gray-800 leading-relaxed mb-0">
+                              {% if practice_text %}{{ practice_text }}{% else %}Practice makes perfect. Each repetition improves your skills. Keep going. Don't stop.{% endif %}
+                          </p>
+                      </div>
+                      <div class="flex items-center justify-center space-x-4 mb-4">
+                          <button id="start-highlight-btn" onclick="startWordHighlighting()" class="px-6 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-semibold transition-colors hidden">
+                              ▶️ Start Highlighting
+                          </button>
+                          <button id="stop-highlight-btn" onclick="stopWordHighlighting()" class="px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition-colors hidden">
+                              ⏸️ Stop
+                          </button>
+                          <div id="current-wpm-display" class="text-lg font-bold text-yellow-600 hidden">
+                              Current Pace: <span id="wpm-value">140</span> WPM
+                          </div>
+                      </div>
+                  </div>
+                  <div class="space-y-3 mb-4">
+                      {% for level in escalation_levels %}
+                      <div class="{% if level.color == 'blue' %}bg-blue-50 border-blue-400{% elif level.color == 'yellow' %}bg-yellow-50 border-yellow-400{% elif level.color == 'red' %}bg-red-50 border-red-400{% else %}bg-gray-50 border-gray-400{% endif %} border-l-4 p-4 rounded-lg cursor-pointer hover:shadow-md transition-all" onclick="practiceEscalationLevel('{{ level.speed }}', {{ level.wpm }}, '{{ level.icon }}')">
+                          <div class="flex items-center justify-between">
+                              <div class="flex items-center space-x-3">
+                                  <span class="text-2xl">{{ level.icon }}</span>
+                                  <div>
+                                      <div class="font-bold text-gray-800">{{ level.speed|title }} Speed ({{ level.wpm }} WPM)</div>
+                                      <div class="text-sm text-gray-600">{{ level.text }}</div>
+                                  </div>
+                              </div>
+                              <button class="px-4 py-2 {% if level.color == 'blue' %}bg-blue-500 hover:bg-blue-600{% elif level.color == 'yellow' %}bg-yellow-500 hover:bg-yellow-600{% elif level.color == 'red' %}bg-red-500 hover:bg-red-600{% else %}bg-gray-500 hover:bg-gray-600{% endif %} text-white rounded-lg text-sm font-semibold">
+                                  Practice This Pace
+                              </button>
+                          </div>
+                      </div>
+                      {% endfor %}
+                  </div>
+                  <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg">
+                      <p class="text-sm text-blue-800">
+                          <strong>💡 Progression:</strong> Start slow, master each level, then escalate. Don't skip levels! Words will highlight automatically to guide your pace.
+                      </p>
+                  </div>
+              </div>
+              <button onclick="getNewEchoText()" class="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg text-sm font-semibold transition-colors">
+                  🔄 New Practice Text
+              </button>
+          </div>
+          {% endif %}
+
+          <!-- Rhythm Ruler -->
+          {% if drill_content_type == 'rhythm_ruler' and rhythm_patterns %}
+          <div class="bg-gradient-to-r from-teal-50 to-cyan-50 p-6 rounded-xl mb-6 border-2 border-teal-200">
+              <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <span class="mr-2">📏</span> Rhythm Ruler
+              </h3>
+              <div class="bg-white rounded-lg p-6 mb-4 shadow-md">
+                  <p id="practice-text-display" class="text-lg text-gray-800 leading-relaxed mb-4">{{ practice_text }}</p>
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                      {% for pattern in rhythm_patterns %}
+                      <div class="{% if pattern.color == 'blue' %}bg-blue-50 border-blue-300 text-blue-700{% elif pattern.color == 'green' %}bg-green-50 border-green-300 text-green-700{% elif pattern.color == 'purple' %}bg-purple-50 border-purple-300 text-purple-700{% else %}bg-gray-50 border-gray-300 text-gray-700{% endif %} border-2 p-4 rounded-lg text-center cursor-pointer hover:shadow-lg transition-all" onclick="practiceRhythmPattern('{{ pattern.pattern }}', '{{ pattern.example }}')">
+                          <div class="text-3xl font-bold mb-2">{{ pattern.pattern }}</div>
+                          <div class="text-sm text-gray-600 mb-2">{{ pattern.description }}</div>
+                          <div class="text-sm font-semibold italic">{{ pattern.example }}</div>
+                      </div>
+                      {% endfor %}
+                  </div>
+                  <div id="rhythm-visualizer" class="hidden mt-4">
+                      <div class="bg-gray-100 p-4 rounded-lg text-center">
+                          <div id="rhythm-display" class="text-4xl font-bold text-teal-600 mb-2"></div>
+                          <p class="text-sm text-gray-600">Follow the rhythm pattern!</p>
+                      </div>
+                  </div>
+              </div>
+              <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
+                  <p class="text-sm text-yellow-800">
+                      <strong>💡 Practice:</strong> Tap the pattern, then speak the example text following the stress pattern.
+                  </p>
+              </div>
+              <button onclick="getNewRhythmText()" class="mt-4 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-lg text-sm font-semibold transition-colors">
+                  🔄 New Practice Text
+              </button>
+          </div>
+          {% endif %}
+
+          <!-- Speed Controller -->
+          {% if drill_content_type == 'speed_controller' and speed_levels %}
+          <div class="bg-gradient-to-r from-pink-50 to-rose-50 p-6 rounded-xl mb-6 border-2 border-pink-200">
+              <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <span class="mr-2">🎚️</span> Speed Controller
+              </h3>
+              <div class="bg-white rounded-lg p-6 mb-4 shadow-md">
+                  <p id="practice-text-display" class="text-lg text-gray-800 leading-relaxed mb-4">{{ practice_text }}</p>
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                      {% for level in speed_levels %}
+                      <div class="{% if level.color == 'blue' %}bg-blue-50 border-blue-300{% elif level.color == 'green' %}bg-green-50 border-green-300{% elif level.color == 'red' %}bg-red-50 border-red-300{% else %}bg-gray-50 border-gray-300{% endif %} border-2 p-4 rounded-lg text-center cursor-pointer hover:shadow-lg transition-all" onclick="practiceSpeedLevel('{{ level.name }}', {{ level.wpm }})">
+                          <div class="text-3xl mb-2">{{ level.icon }}</div>
+                          <div class="font-bold text-gray-800 mb-1">{{ level.name }}</div>
+                          <div class="text-sm text-gray-600 mb-2">{{ level.wpm }} WPM</div>
+                          <div class="text-xs {% if level.color == 'blue' %}text-blue-700{% elif level.color == 'green' %}text-green-700{% elif level.color == 'red' %}text-red-700{% else %}text-gray-700{% endif %}">{{ level.description }}</div>
+                      </div>
+                      {% endfor %}
+                  </div>
+                  <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg">
+                      <p class="text-sm text-blue-800">
+                          <strong>💡 Control:</strong> Practice each speed level. Master control at each pace before moving to the next.
+                      </p>
+                  </div>
+              </div>
+              <button onclick="getNewSpeedText()" class="px-4 py-2 bg-pink-500 hover:bg-pink-600 text-white rounded-lg text-sm font-semibold transition-colors">
+                  🔄 New Practice Text
+              </button>
+          </div>
+          {% endif %}
+
+          <!-- Vowel Vortex -->
+          {% if drill_content_type == 'vowel_vortex' and vowels %}
+          <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl mb-6 border-2 border-purple-200">
+              <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <span class="mr-2">🌀</span> Exaggerated Vowel Vortex
+              </h3>
+              <div class="bg-white rounded-lg p-6 mb-4 shadow-md">
+                  <div class="text-center mb-6">
+                      <h4 class="text-lg font-bold text-purple-800 mb-4">Spin the Vowel Wheel!</h4>
+                      <div class="relative inline-block">
+                          <div id="vowel-wheel" class="w-64 h-64 rounded-full border-8 border-purple-300 relative overflow-hidden bg-gradient-to-br from-purple-100 to-pink-100 cursor-pointer transition-transform" onclick="spinVowelWheel()">
+                              <div class="absolute inset-0 flex items-center justify-center">
+                                  <div id="selected-vowel-display" class="text-6xl font-bold text-purple-700">?</div>
+                              </div>
+                              <!-- Vowel segments will be positioned by JavaScript -->
+                          </div>
+                          <div class="absolute top-0 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-8 border-transparent border-b-red-500 pointer-events-none"></div>
+                      </div>
+                      <button id="spin-vowel-btn" onclick="spinVowelWheel()" class="mt-6 px-8 py-4 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold text-lg transition-colors">
+                          🎲 Spin the Wheel!
+                      </button>
+                  </div>
+                  <div id="vowel-content" class="hidden">
+                      <div class="bg-purple-50 border-l-4 border-purple-400 p-4 rounded-lg mb-4">
+                          <h4 class="font-bold text-purple-800 mb-2 text-xl" id="vowel-title">Vowel: <span id="selected-vowel">-</span></h4>
+                          <div class="mb-4">
+                              <h5 class="font-semibold text-purple-700 mb-2">Practice Words:</h5>
+                              <div id="vowel-words" class="flex flex-wrap gap-2 mb-4">
+                                  <!-- Words will be populated by JavaScript -->
+                              </div>
+                          </div>
+                          <div class="mb-4">
+                              <h5 class="font-semibold text-purple-700 mb-2">Practice Sentence:</h5>
+                              <p id="vowel-sentence" class="text-lg text-gray-800 leading-relaxed font-medium italic"></p>
+                          </div>
+                          <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded-lg">
+                              <p class="text-sm text-yellow-800">
+                                  <strong>💡 Tip:</strong> Exaggerate the vowel sound! Open your mouth wide, make the sound long and clear. Practice each word multiple times.
+                              </p>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+          {% endif %}
+
+          <!-- Mirror Mimic Madness -->
+          {% if drill_content_type == 'mirror_mimic' and selected_twister %}
+          <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl mb-6 border-2 border-blue-200">
+              <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <span class="mr-2">🪞</span> Mirror Mimic Madness
+              </h3>
+              <div class="bg-white rounded-lg p-6 mb-4 shadow-md">
+                  <div class="mb-6">
+                      <h4 class="text-lg font-bold text-blue-800 mb-3">{{ selected_twister.text }}</h4>
+                      <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg mb-4">
+                          <div class="grid grid-cols-2 gap-4 mb-3">
+                              <div>
+                                  <span class="text-sm font-semibold text-blue-700">Difficulty:</span>
+                                  <span class="ml-2 px-2 py-1 rounded text-sm font-bold {% if selected_twister.difficulty == 'easy' %}bg-green-100 text-green-800{% elif selected_twister.difficulty == 'medium' %}bg-yellow-100 text-yellow-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                      {{ selected_twister.difficulty|title }}
+                                  </span>
+                              </div>
+                              <div>
+                                  <span class="text-sm font-semibold text-blue-700">Focus:</span>
+                                  <span class="ml-2 text-sm text-blue-800 font-medium">{{ selected_twister.focus }}</span>
+                              </div>
+                          </div>
+                          <div class="mb-3">
+                              <span class="text-sm font-semibold text-blue-700">Repetitions:</span>
+                              <span class="ml-2 text-sm text-blue-800 font-medium">{{ selected_twister.repetitions }} times</span>
+                          </div>
+                          <div class="bg-white p-3 rounded">
+                              <p class="text-sm text-blue-900 font-medium">{{ selected_twister.phonetic_tips }}</p>
+                          </div>
+                      </div>
+                      <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg mb-4">
+                          <p class="text-sm text-yellow-800">
+                              <strong>💡 Mirror Practice:</strong> Use your webcam or a mirror to watch your mouth movements. Mimic the tongue and lip positions for each sound. Practice {{ selected_twister.repetitions }} times!
+                          </p>
+                      </div>
+                      <div class="flex items-center justify-center space-x-4 mb-4">
+                          <div id="repetition-counter" class="text-3xl font-bold text-blue-600">0</div>
+                          <span class="text-lg text-gray-600">/ {{ selected_twister.repetitions }}</span>
+                      </div>
+                      <button id="start-repetition-btn" onclick="startRepetitionPractice()" class="w-full px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold text-lg transition-colors">
+                          ▶️ Start Practice
+                      </button>
+                      <div id="repetition-progress" class="hidden mt-4">
+                          <div class="w-full bg-gray-200 rounded-full h-4">
+                              <div id="repetition-progress-bar" class="bg-blue-600 h-4 rounded-full transition-all duration-300" style="width: 0%"></div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+              <button onclick="getNewTwister()" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-semibold transition-colors">
+                  🔄 New Tongue Twister
+              </button>
+          </div>
+          {% endif %}
+
+          <!-- Phonetic Puzzle Builder -->
+          {% if drill_content_type == 'phonetic_puzzle' and phonetic_challenges %}
+          <div class="bg-gradient-to-r from-green-50 to-teal-50 p-6 rounded-xl mb-6 border-2 border-green-200">
+              <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <span class="mr-2">🧩</span> Phonetic Puzzle Builder
+              </h3>
+              <div class="bg-white rounded-lg p-6 mb-4 shadow-md">
+                  <div id="puzzle-container" class="space-y-6">
+                      {% for challenge in phonetic_challenges %}
+                      <div class="bg-gradient-to-r from-green-50 to-teal-50 p-6 rounded-lg border-2 border-green-300">
+                          <div class="mb-4">
+                              <h4 class="text-xl font-bold text-green-800 mb-2">{{ challenge.word }}</h4>
+                              <p class="text-sm text-gray-600 mb-2">{{ challenge.hint }}</p>
+                              <p class="text-sm text-gray-700 italic mb-2">{{ challenge.example }}</p>
+                          </div>
+                          <div class="mb-4">
+                              <label class="text-sm font-semibold text-green-700 mb-2 block">Phonetic Symbols:</label>
+                              <div class="flex flex-wrap gap-2 mb-3">
+                                  {% for symbol in challenge.symbols %}
+                                  <span class="phonetic-symbol px-3 py-2 bg-white border-2 border-green-300 rounded-lg text-lg font-bold text-green-700 cursor-move" draggable="true" data-symbol="{{ symbol }}" ondragstart="drag(event)">{{ symbol }}</span>
+                                  {% endfor %}
+                              </div>
+                              <div class="bg-white p-4 rounded-lg border-2 border-dashed border-green-300 min-h-16 flex flex-wrap gap-2 items-center" id="puzzle-drop-{{ forloop.counter0 }}" ondrop="drop(event)" ondragover="allowDrop(event)">
+                                  <span class="text-gray-400 text-sm">Drag symbols here to build the phonetic spelling</span>
+                              </div>
+                          </div>
+                          <div class="flex items-center justify-between">
+                              <div>
+                                  <span class="text-sm font-semibold text-green-700">Correct:</span>
+                                  <span id="correct-answer-{{ forloop.counter0 }}" class="ml-2 text-lg font-bold text-green-600 hidden">{{ challenge.phonetic }}</span>
+                              </div>
+                              <button onclick="checkPuzzle({{ forloop.counter0 }}, '{{ challenge.phonetic }}')" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold text-sm transition-colors">
+                                  ✓ Check Answer
+                              </button>
+                          </div>
+                          <div id="puzzle-feedback-{{ forloop.counter0 }}" class="mt-3 hidden"></div>
+                      </div>
+                      {% endfor %}
+                  </div>
+                  <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg mt-4">
+                      <p class="text-sm text-yellow-800">
+                          <strong>💡 How to Play:</strong> Drag the phonetic symbols into the drop zone to build the correct phonetic spelling. Then check your answer!
+                      </p>
+                  </div>
+              </div>
+              <button onclick="getNewPuzzle()" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-semibold transition-colors">
+                  🔄 New Puzzle
+              </button>
+          </div>
+          {% endif %}
+
+          <!-- Pencil Precision Drill -->
+          {% if drill_content_type == 'pencil_precision' and current_text %}
+          <div class="bg-gradient-to-r from-orange-50 to-red-50 p-6 rounded-xl mb-6 border-2 border-orange-200">
+              <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <span class="mr-2">✏️</span> Pencil Precision Drill
+              </h3>
+              <div class="bg-white rounded-lg p-6 mb-4 shadow-md">
+                  <div class="mb-6">
+                      <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg mb-4">
+                          <h4 class="font-bold text-yellow-800 mb-2">📋 Instructions:</h4>
+                          <ol class="text-sm text-yellow-800 space-y-1 list-decimal list-inside">
+                              <li>Place a pencil horizontally between your teeth (gently, don't bite down)</li>
+                              <li>Read the practice text below with the pencil in place</li>
+                              <li>Record yourself speaking with the pencil</li>
+                              <li>Remove the pencil and read the same text again</li>
+                              <li>Compare the two recordings to hear the improvement!</li>
+                          </ol>
+                      </div>
+                      <div class="mb-4">
+                          <h4 class="font-bold text-orange-800 mb-3">Practice Text:</h4>
+                          <div class="bg-gray-50 p-4 rounded-lg border-2 border-gray-200">
+                              <p id="pencil-text-display" class="text-lg text-gray-800 leading-relaxed font-medium">{{ current_text.text }}</p>
+                          </div>
+                          <div class="mt-3 text-sm text-gray-600">
+                              <span class="font-semibold">Focus:</span> {{ current_text.focus }}
+                              <span class="ml-4">
+                                  <span class="font-semibold">Difficulty:</span>
+                                  <span class="px-2 py-1 rounded text-xs font-bold {% if current_text.difficulty == 'easy' %}bg-green-100 text-green-800{% elif current_text.difficulty == 'medium' %}bg-yellow-100 text-yellow-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                      {{ current_text.difficulty|title }}
+                                  </span>
+                              </span>
+                          </div>
+                      </div>
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                          <div class="bg-red-50 border-2 border-red-300 p-4 rounded-lg">
+                              <h5 class="font-bold text-red-800 mb-2 flex items-center">
+                                  <span class="mr-2">📹</span> With Pencil (Before)
+                              </h5>
+                              <p class="text-sm text-red-700 mb-3">Record yourself speaking with the pencil between your teeth</p>
+                              <div id="pencil-before-recording" class="bg-white p-4 rounded border-2 border-dashed border-red-300 min-h-20 flex items-center justify-center">
+                                  <span class="text-gray-500 text-sm">Click "Start Recording" to begin</span>
+                              </div>
+                          </div>
+                          <div class="bg-green-50 border-2 border-green-300 p-4 rounded-lg">
+                              <h5 class="font-bold text-green-800 mb-2 flex items-center">
+                                  <span class="mr-2">🎯</span> Without Pencil (After)
+                              </h5>
+                              <p class="text-sm text-green-700 mb-3">Remove the pencil and record again to compare</p>
+                              <div id="pencil-after-recording" class="bg-white p-4 rounded border-2 border-dashed border-green-300 min-h-20 flex items-center justify-center">
+                                  <span class="text-gray-500 text-sm">Click "Start Recording" after removing pencil</span>
+                              </div>
+                          </div>
+                      </div>
+                      <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg">
+                          <p class="text-sm text-blue-800">
+                              <strong>💡 Why This Works:</strong> The pencil forces you to articulate more clearly. When you remove it, your articulation muscles are more engaged, resulting in clearer speech!
+                          </p>
+                      </div>
+                  </div>
+              </div>
+              <button onclick="getNewPencilText()" class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-semibold transition-colors">
+                  🔄 New Practice Text
+              </button>
+          </div>
+          {% endif %}
+
+          <!-- Generic Practice Text (for other drills) -->
+          {% if practice_text and drill_content_type != 'poem_echo' and drill_content_type != 'shadow_superhero' and drill_content_type != 'word_swap' and drill_content_type != 'silence_master' and drill_content_type != 'mirror_mimic' and drill_content_type != 'metronome' and drill_content_type != 'pause_pyramid' and drill_content_type != 'slow_motion' and drill_content_type != 'beat_drop' and drill_content_type != 'timer_tag' and drill_content_type != 'echo_chamber' and drill_content_type != 'rhythm_ruler' and drill_content_type != 'speed_controller' and drill_content_type != 'vowel_vortex' and drill_content_type != 'phonetic_puzzle' and drill_content_type != 'pencil_precision' %}
+          <div class="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 rounded-xl mb-6 border-2 border-indigo-200">
+              <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                  <span class="mr-2">📝</span> Practice Text
+              </h3>
+              <div class="bg-white rounded-lg p-6 shadow-md">
+                  <p id="practice-text-display" class="text-lg text-gray-800 leading-relaxed">{{ practice_text }}</p>
+              </div>
+          </div>
+          {% endif %}
+
+          {% endif %}
+
+          <!-- Timer Section -->
+        <div class="text-center mb-4">
+            <div class="timer-display" id="timer-display">00:00</div>
+            <div class="timer-buttons">
+                <button type="button" class="timer-btn" data-seconds="60">1 Min</button>
+                <button type="button" class="timer-btn" data-seconds="120">2 Min</button>
+                <button type="button" class="timer-btn" data-seconds="300">5 Min</button>
+            </div>
+        </div>
+        
+        <!-- Practice Arena -->
+        <div class="practice-arena" id="practice-arena">
+            <div id="idle-state">
+                <div style="font-size: 4rem; margin-bottom: 1rem;">🎯</div>
+                <h2 style="margin-bottom: 1rem; color: #333;">Ready to Practice!</h2>
+                <p style="color: #666; margin-bottom: 2rem;">Click the button below to start recording</p>
+                <button id="record-btn" class="btn-primary">🎤 Start Recording</button>
+            </div>
+            
+            <div id="recording-state" style="display: none;">
+                <div style="font-size: 4rem; margin-bottom: 1rem; animation: pulse 1s infinite;">🔴</div>
+                <h2 style="margin-bottom: 1rem; color: #f5576c; font-weight: 700;">Recording...</h2>
+                <p style="color: #666; margin-bottom: 1rem;">Speak clearly and watch your stats update in real-time!</p>
+                <canvas id="waveform-canvas" class="waveform-canvas" width="800" height="150"></canvas>
+                <button id="stop-btn" class="btn-primary recording" style="margin-top: 1rem;">🛑 Stop Recording</button>
+            </div>
+            
+            <div id="playback-state" style="display: none;">
+                <div style="font-size: 4rem; margin-bottom: 1rem;">🎉</div>
+                <h2 style="margin-bottom: 1rem; color: #38ef7d; font-weight: 700;">Review Your Practice</h2>
+                <audio id="playback-audio" controls style="width: 100%; margin: 1rem 0;"></audio>
+                <div id="practice-feedback" style="margin-top: 1.5rem;"></div>
+            </div>
+        </div>
+        
+        <!-- Live Stats - Shows when recording starts -->
+        <div id="live-stats" class="stats-grid" style="display: none;">
+            <div class="stat-card">
+                <div class="stat-value" id="duration-stat" style="color: #667eea;">0:00</div>
+                <div class="stat-label">Duration</div>
+            </div>
+            {% if drill.skill_type == 'filler_words' %}
+            <div class="stat-card">
+                <div class="stat-value" id="fillers-stat" style="color: #f5576c;">0</div>
+                <div class="stat-label">Fillers Detected</div>
+            </div>
+            {% elif drill.skill_type == 'pacing' %}
+            <div class="stat-card">
+                <div class="stat-value" id="wpm-stat" style="color: #4facfe;">0</div>
+                <div class="stat-label">Words/Min</div>
+            </div>
+            {% elif drill.skill_type == 'pronunciation' %}
+            <div class="stat-card">
+                <div class="stat-value" id="clarity-stat" style="color: #38ef7d;">0%</div>
+                <div class="stat-label">Clarity</div>
+            </div>
+            {% endif %}
+            <div class="stat-card">
+                <div class="stat-value" id="score-stat" style="color: #f093fb;">0</div>
+                <div class="stat-label">Score</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Completion Form -->
+    <div class="completion-form">
+        <h2 style="margin-bottom: 1.5rem; text-align: center;">Complete Drill</h2>
+        <form id="completion-form" method="post" action="{% url 'coach:complete_drill' drill.id %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="score">Score (0-10)</label>
+                <input type="number" id="score" name="score" min="0" max="10" step="0.1" required>
+            </div>
+            <div class="form-group">
+                <label for="duration_seconds">Duration (seconds)</label>
+                <input type="number" id="duration_seconds" name="duration_seconds" min="0" required>
+            </div>
+            <div class="form-group">
+                <label for="notes">Notes</label>
+                <textarea id="notes" name="notes" rows="4" placeholder="Share your thoughts about this practice session..."></textarea>
+            </div>
+            <div style="text-align: center;">
+                <button type="submit" class="btn-primary" style="background: var(--success-gradient);">
+                    ✅ Submit Practice
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Recent Completions -->
+    {% if user_completions %}
+    <div class="practice-panel">
+        <h2 style="margin-bottom: 1.5rem;">Recent Completions</h2>
+        <div class="stats-grid">
+            {% for completion in user_completions %}
+            <div class="stat-card">
+                <div class="stat-value">{{ completion.score|default:"N/A" }}</div>
+                <div class="stat-label">Score</div>
+                <div style="margin-top: 0.5rem; font-size: 0.875rem; color: #999;">
+                    {{ completion.completed_at|date:"M d, Y" }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Modern Drill Template v2.0 - Cache buster -->
+<script src="{% static 'js/drills.js' %}"></script>
+<script>
+console.log('🎯 Modern drill template v2.0 loaded at', new Date().toISOString());
+// Global state
+const DrillState = {
+    isRecording: false,
+    isPlaying: false,
+    startTime: null,
+    duration: 0,
+    fillers: 0,
+    words: 0,
+    timerInterval: null,
+    statsInterval: null,
+    audioContext: null,
+    analyser: null,
+    mediaRecorder: null,
+    audioChunks: [],
+    stream: null,
+    animationFrame: null
+};
+
+// DOM elements
+let recordBtn, stopBtn, timerDisplay, practiceArena, idleState, recordingState, playbackState;
+let waveformCanvas, playbackAudio, liveStats;
+
+// Initialize when DOM is ready
+(function() {
+    'use strict';
+    
+    console.log('🎯 Script loaded, waiting for DOM...');
+    
+    // Initialize immediately if DOM already ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeDrill);
+    } else {
+        initializeDrill();
+    }
+    
+    function initializeDrill() {
+        console.log('🎯 DOM ready, initializing drill page...');
+        
+        try {
+            // Get DOM elements
+            recordBtn = document.getElementById('record-btn');
+            stopBtn = document.getElementById('stop-btn');
+            timerDisplay = document.getElementById('timer-display');
+            practiceArena = document.getElementById('practice-arena');
+            idleState = document.getElementById('idle-state');
+            recordingState = document.getElementById('recording-state');
+            playbackState = document.getElementById('playback-state');
+            waveformCanvas = document.getElementById('waveform-canvas');
+            playbackAudio = document.getElementById('playback-audio');
+            liveStats = document.getElementById('live-stats');
+            
+            console.log('Elements found:', {
+                recordBtn: !!recordBtn,
+                stopBtn: !!stopBtn,
+                timerDisplay: !!timerDisplay,
+                practiceArena: !!practiceArena,
+                idleState: !!idleState,
+                recordingState: !!recordingState,
+                playbackState: !!playbackState,
+                waveformCanvas: !!waveformCanvas,
+                playbackAudio: !!playbackAudio,
+                liveStats: !!liveStats
+            });
+            
+            // Initialize drill components
+            if (typeof DrillComponents !== 'undefined') {
+                window.drillComponents = new DrillComponents();
+                console.log('✅ DrillComponents loaded');
+            } else {
+                console.warn('⚠️ DrillComponents not found, creating fallback');
+                window.drillComponents = createFallbackComponents();
+            }
+            
+            // Setup timer buttons
+            setupTimerButtons();
+            
+            // Setup record button
+            if (recordBtn) {
+                recordBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('🎤 Record button clicked!');
+                    startRecording();
+                });
+                recordBtn.style.cursor = 'pointer';
+                recordBtn.disabled = false;
+                recordBtn.setAttribute('tabindex', '0');
+                console.log('✅ Record button initialized and attached listener');
+            } else {
+                console.error('❌ Record button NOT FOUND!');
+            }
+            
+            // Setup stop button
+            if (stopBtn) {
+                stopBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('🛑 Stop button clicked!');
+                    stopRecording();
+                });
+                stopBtn.style.cursor = 'pointer';
+                stopBtn.disabled = false;
+                console.log('✅ Stop button initialized and attached listener');
+            } else {
+                console.warn('⚠️ Stop button not found (this is OK, it will be created later)');
+            }
+            
+            // Setup completion form
+            setupCompletionForm();
+            
+            console.log('✅ All components initialized successfully');
+            
+        } catch (error) {
+            console.error('❌ Error during initialization:', error);
+            alert('Error initializing drill: ' + error.message);
+        }
+    }
+})();
+
+// Timer function
+function startTimer(seconds) {
+    console.log('⏱️ Starting timer:', seconds, 'seconds');
+    
+    // Clear existing timer
+    if (DrillState.timerInterval) {
+        clearInterval(DrillState.timerInterval);
+    }
+    
+    let remaining = seconds;
+    
+    const updateTimer = () => {
+        const mins = Math.floor(remaining / 60);
+        const secs = remaining % 60;
+        timerDisplay.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+        
+        if (remaining <= 10) {
+            timerDisplay.style.color = '#f5576c';
+            timerDisplay.style.animation = 'pulse 1s infinite';
+        } else {
+            timerDisplay.style.color = '';
+            timerDisplay.style.animation = '';
+        }
+        
+        if (remaining <= 0) {
+            clearInterval(DrillState.timerInterval);
+            DrillState.timerInterval = null;
+            timerDisplay.textContent = '00:00';
+            timerDisplay.style.color = '#f5576c';
+            alert('⏰ Time\'s up!');
+        }
+    };
+    
+    updateTimer();
+    
+    DrillState.timerInterval = setInterval(() => {
+        remaining--;
+        updateTimer();
+    }, 1000);
+}
+
+// Make timer available globally
+window.startTimer = startTimer;
+
+// Setup timer buttons
+function setupTimerButtons() {
+    const timerButtons = document.querySelectorAll('.timer-btn');
+    console.log('⏱️ Found', timerButtons.length, 'timer buttons');
+    
+    timerButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const seconds = parseInt(this.getAttribute('data-seconds'));
+            console.log('⏱️ Timer button clicked:', seconds);
+            startTimer(seconds);
+        });
+        btn.style.cursor = 'pointer';
+        btn.disabled = false;
+    });
+}
+
+// Start recording
+async function startRecording() {
+    console.log('🎤 Starting recording...');
+    
+    try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            throw new Error('Microphone access not available');
+        }
+        
+        // Request microphone access
+        DrillState.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        
+        // Initialize MediaRecorder
+        DrillState.audioChunks = [];
+        DrillState.mediaRecorder = new MediaRecorder(DrillState.stream);
+        
+        DrillState.mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                DrillState.audioChunks.push(event.data);
+            }
+        };
+        
+        DrillState.mediaRecorder.onstop = () => {
+            console.log('🛑 Recording stopped, processing audio...');
+            
+            // IMPORTANT: Stop simulated stats updates immediately
+            if (DrillState.statsInterval) {
+                clearInterval(DrillState.statsInterval);
+                DrillState.statsInterval = null;
+                console.log('✅ Stopped simulated stats updates');
+            }
+            
+            const audioBlob = new Blob(DrillState.audioChunks, { type: 'audio/wav' });
+            const audioUrl = URL.createObjectURL(audioBlob);
+            
+            if (playbackAudio) {
+                playbackAudio.src = audioUrl;
+            }
+            
+            // Show playback state immediately
+            if (recordingState) recordingState.style.display = 'none';
+            if (playbackState) playbackState.style.display = 'block';
+            if (practiceArena) {
+                practiceArena.classList.remove('recording');
+                practiceArena.classList.add('playing');
+            }
+            
+            // Show analyzing message immediately and keep it visible
+            const feedbackDiv = document.getElementById('practice-feedback');
+            if (feedbackDiv) {
+                feedbackDiv.innerHTML = `
+                    <div class="feedback-message info" style="min-height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                        <p style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">🔄 Analyzing your speech with AI models...</p>
+                        <p style="font-size: 1rem; opacity: 0.8; margin-bottom: 0.5rem;">Using Whisper → BERT → XGBoost</p>
+                        <div style="width: 50px; height: 50px; border: 4px solid rgba(79, 172, 254, 0.3); border-top-color: #4facfe; border-radius: 50%; animation: spin 1s linear infinite; margin-top: 0.5rem;"></div>
+                        <p style="font-size: 0.875rem; opacity: 0.7; margin-top: 0.5rem;">This may take a few seconds...</p>
+                    </div>
+                `;
+                // Add spinner animation
+                const style = document.createElement('style');
+                style.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
+                if (!document.querySelector('style[data-drill-spinner]')) {
+                    style.setAttribute('data-drill-spinner', '');
+                    document.head.appendChild(style);
+                }
+            }
+            
+            console.log('📊 Audio blob created, size:', audioBlob.size, 'bytes');
+            console.log('📤 Starting AI model analysis (this will take a few seconds)...');
+            
+            // Analyze with real NLP models (don't await, but handle in promise)
+            analyzeWithModels(audioBlob)
+                .then((result) => {
+                    console.log('✅ Model analysis completed successfully');
+                    // The updatePracticeFeedbackWithModels function will replace the analyzing message
+                })
+                .catch((error) => {
+                    console.error('❌ Error analyzing with models:', error);
+                    console.error('Full error:', error);
+                    // Show error message
+                    if (feedbackDiv) {
+                        feedbackDiv.innerHTML = `
+                            <div class="feedback-message info">
+                                <p>⚠️ Analysis error: ${error.message}</p>
+                                <p style="font-size: 0.875rem; margin-top: 0.5rem;">Using simulated feedback as fallback.</p>
+                                <p style="font-size: 0.75rem; opacity: 0.7; margin-top: 0.5rem;">Check console (F12) for details.</p>
+                            </div>
+                        `;
+                    }
+                    // Fallback to basic feedback after a delay
+                    setTimeout(() => {
+                        updatePracticeFeedback();
+                    }, 3000);
+                });
+        };
+        
+        // Initialize audio context for waveform
+        DrillState.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        DrillState.analyser = DrillState.audioContext.createAnalyser();
+        const source = DrillState.audioContext.createMediaStreamSource(DrillState.stream);
+        source.connect(DrillState.analyser);
+        DrillState.analyser.fftSize = 256;
+        
+        // Setup waveform canvas
+        if (waveformCanvas) {
+            // Set explicit canvas dimensions
+            const canvasWidth = waveformCanvas.offsetWidth || 800;
+            const canvasHeight = 150;
+            waveformCanvas.width = canvasWidth;
+            waveformCanvas.height = canvasHeight;
+            console.log('Canvas dimensions set:', canvasWidth, 'x', canvasHeight);
+            
+            // Make sure canvas is visible
+            waveformCanvas.style.display = 'block';
+            waveformCanvas.style.visibility = 'visible';
+        } else {
+            console.error('❌ Waveform canvas element not found!');
+        }
+        
+        // Start recording
+        DrillState.mediaRecorder.start();
+        DrillState.isRecording = true;
+        DrillState.startTime = Date.now();
+        DrillState.duration = 0;
+        DrillState.fillers = 0;
+        DrillState.words = 0;
+        
+        // Update UI - Show recording state and hide idle state
+        console.log('🎨 Updating UI elements...');
+        
+        if (idleState) {
+            idleState.style.display = 'none';
+            console.log('✅ Idle state hidden');
+        } else {
+            console.warn('⚠️ Idle state element not found');
+        }
+        
+        if (recordingState) {
+            recordingState.style.display = 'block';
+            recordingState.style.visibility = 'visible';
+            console.log('✅ Recording state shown');
+        } else {
+            console.error('❌ Recording state element not found!');
+        }
+        
+        if (practiceArena) {
+            practiceArena.classList.add('recording');
+            console.log('✅ Practice arena set to recording state');
+        }
+        
+        if (liveStats) {
+            liveStats.style.display = 'grid';
+            liveStats.style.visibility = 'visible';
+            console.log('✅ Live stats shown (display: grid, visibility: visible)');
+            console.log('Live stats element:', liveStats);
+            console.log('Live stats computed style:', window.getComputedStyle(liveStats).display);
+        } else {
+            console.error('❌ Live stats element not found!');
+        }
+        
+        // Force a repaint to ensure elements are visible
+        setTimeout(() => {
+            if (liveStats) {
+                console.log('Live stats after timeout:', window.getComputedStyle(liveStats).display);
+            }
+        }, 100);
+        
+        // Start waveform visualization
+        if (waveformCanvas && DrillState.analyser) {
+            // Wait a bit for audio context to be ready
+            setTimeout(() => {
+                startWaveformVisualization();
+                console.log('✅ Waveform visualization started');
+            }, 100);
+        } else {
+            console.warn('⚠️ Waveform canvas or analyser not ready:', {
+                canvas: !!waveformCanvas,
+                analyser: !!DrillState.analyser
+            });
+        }
+        
+        // Start stats updates
+        startStatsUpdates();
+        console.log('✅ Stats updates started');
+        
+        console.log('✅ Recording started successfully');
+        
+    } catch (error) {
+        console.error('❌ Recording error:', error);
+        alert('Error accessing microphone: ' + error.message);
+        resetRecording();
+    }
+}
+
+// Stop recording
+function stopRecording() {
+    console.log('🛑 Stopping recording...');
+    
+    if (DrillState.mediaRecorder && DrillState.isRecording) {
+        DrillState.mediaRecorder.stop();
+        DrillState.isRecording = false;
+        
+        // Stop stream tracks
+        if (DrillState.stream) {
+            DrillState.stream.getTracks().forEach(track => track.stop());
+        }
+        
+        // Stop intervals (IMPORTANT: Stop simulated stats updates)
+        if (DrillState.statsInterval) {
+            clearInterval(DrillState.statsInterval);
+            DrillState.statsInterval = null;
+            console.log('✅ Stopped simulated stats updates');
+        }
+        
+        if (DrillState.animationFrame) {
+            cancelAnimationFrame(DrillState.animationFrame);
+            DrillState.animationFrame = null;
+        }
+        
+        // Close audio context
+        if (DrillState.audioContext) {
+            DrillState.audioContext.close();
+            DrillState.audioContext = null;
+        }
+        
+        console.log('✅ Recording stopped, waiting for final audio blob...');
+    }
+}
+
+// Start waveform visualization
+function startWaveformVisualization() {
+    console.log('🎨 Starting waveform visualization...');
+    console.log('Waveform canvas:', waveformCanvas);
+    console.log('Analyser:', DrillState.analyser);
+    
+    if (!waveformCanvas) {
+        console.error('❌ Waveform canvas not found!');
+        return;
+    }
+    
+    if (!DrillState.analyser) {
+        console.error('❌ Analyser not initialized!');
+        return;
+    }
+    
+    const ctx = waveformCanvas.getContext('2d');
+    if (!ctx) {
+        console.error('❌ Could not get canvas context!');
+        return;
+    }
+    
+    // Set canvas size if not already set
+    if (waveformCanvas.width === 0 || waveformCanvas.height === 0) {
+        waveformCanvas.width = waveformCanvas.offsetWidth || 800;
+        waveformCanvas.height = waveformCanvas.offsetHeight || 150;
+        console.log('Canvas size set to:', waveformCanvas.width, 'x', waveformCanvas.height);
+    }
+    
+    const dataArray = new Uint8Array(DrillState.analyser.frequencyBinCount);
+    console.log('Data array size:', dataArray.length);
+    
+    function draw() {
+        if (!DrillState.isRecording || !DrillState.analyser) {
+            console.log('Stopping waveform - recording stopped or analyser lost');
+            return;
+        }
+        
+        DrillState.animationFrame = requestAnimationFrame(draw);
+        
+        try {
+            DrillState.analyser.getByteFrequencyData(dataArray);
+            
+            // Clear canvas with semi-transparent background
+            ctx.fillStyle = 'rgba(102, 126, 234, 0.05)';
+            ctx.fillRect(0, 0, waveformCanvas.width, waveformCanvas.height);
+            
+            // Draw waveform bars
+            const barWidth = (waveformCanvas.width / dataArray.length) * 2.5;
+            let x = 0;
+            
+            for (let i = 0; i < dataArray.length; i++) {
+                const barHeight = (dataArray[i] / 255) * waveformCanvas.height;
+                
+                // Create gradient based on volume
+                if (barHeight > waveformCanvas.height * 0.7) {
+                    ctx.fillStyle = '#f5576c'; // Red for loud
+                } else if (barHeight > waveformCanvas.height * 0.4) {
+                    ctx.fillStyle = '#667eea'; // Blue for medium
+                } else {
+                    ctx.fillStyle = '#38ef7d'; // Green for quiet
+                }
+                
+                ctx.fillRect(x, waveformCanvas.height - barHeight, barWidth, barHeight);
+                x += barWidth + 1;
+            }
+        } catch (error) {
+            console.error('Error drawing waveform:', error);
+        }
+    }
+    
+    console.log('✅ Starting waveform draw loop');
+    draw();
+}
+
+// Start stats updates (simulated - will be replaced by real model results)
+function startStatsUpdates() {
+    console.log('📊 Starting simulated stats updates (will be replaced by AI model results)...');
+    
+    if (DrillState.statsInterval) {
+        clearInterval(DrillState.statsInterval);
+    }
+    
+    // Immediate first update
+    const updateStats = () => {
+        // IMPORTANT: Only update if still recording (will be stopped when recording stops)
+        if (!DrillState.isRecording) {
+            if (DrillState.statsInterval) {
+                clearInterval(DrillState.statsInterval);
+                DrillState.statsInterval = null;
+                console.log('✅ Stats updates stopped (recording ended)');
+            }
+            return;
+        }
+        
+        // Update duration
+        DrillState.duration = Math.floor((Date.now() - DrillState.startTime) / 1000);
+        const mins = Math.floor(DrillState.duration / 60);
+        const secs = DrillState.duration % 60;
+        const durationEl = document.getElementById('duration-stat');
+        if (durationEl) {
+            durationEl.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+        } else {
+            console.warn('⚠️ Duration stat element not found');
+        }
+        
+        // Update category-specific stats
+        const drillType = '{{ drill.skill_type }}';
+        
+        if (drillType === 'filler_words') {
+            // Simulate filler detection (slightly more frequent for demo)
+            if (Math.random() < 0.02 && DrillState.duration > 2) {
+                DrillState.fillers++;
+                console.log('Filler detected! Total:', DrillState.fillers);
+            }
+            const fillersEl = document.getElementById('fillers-stat');
+            if (fillersEl) {
+                fillersEl.textContent = DrillState.fillers;
+                // Flash effect when filler detected
+                if (DrillState.fillers > 0 && Math.random() < 0.1) {
+                    fillersEl.style.transform = 'scale(1.2)';
+                    setTimeout(() => fillersEl.style.transform = 'scale(1)', 200);
+                }
+            }
+        } else if (drillType === 'pacing') {
+            // Calculate WPM (simulate word count increasing)
+            DrillState.words += Math.floor(Math.random() * 3);
+            const wpm = DrillState.words > 0 && DrillState.duration > 0 
+                ? Math.floor((DrillState.words / DrillState.duration) * 60)
+                : 0;
+            const wpmEl = document.getElementById('wpm-stat');
+            if (wpmEl) {
+                wpmEl.textContent = wpm;
+            }
+        } else if (drillType === 'pronunciation') {
+            // Calculate clarity score
+            const clarity = Math.min(100, Math.floor((DrillState.duration / 30) * 100));
+            const clarityEl = document.getElementById('clarity-stat');
+            if (clarityEl) {
+                clarityEl.textContent = clarity + '%';
+            }
+        }
+        
+        // Calculate overall score
+        const score = Math.max(0, Math.min(100, 
+            100 - (DrillState.fillers * 5) + (DrillState.words * 0.5) + Math.min(DrillState.duration * 2, 30)
+        ));
+        const scoreEl = document.getElementById('score-stat');
+        if (scoreEl) {
+            scoreEl.textContent = Math.floor(score);
+        } else {
+            console.warn('⚠️ Score stat element not found');
+        }
+    };
+    
+    // Run immediately
+    updateStats();
+    
+    // Then set interval
+    DrillState.statsInterval = setInterval(updateStats, 100);
+    
+    console.log('✅ Stats updates interval started');
+}
+
+// Analyze with real NLP models
+function analyzeWithModels(audioBlob) {
+    console.log('🤖 Starting AI model analysis...');
+    
+    return new Promise((resolve, reject) => {
+        try {
+            // Convert audio blob to base64
+            const reader = new FileReader();
+            
+            reader.onloadend = async () => {
+                try {
+                    const base64Audio = reader.result;
+                    const drillId = '{{ drill.id }}';
+                    
+                    console.log('📤 Sending audio to API...', {
+                        audioSize: audioBlob.size,
+                        drillId: drillId,
+                        duration: DrillState.duration
+                    });
+                    
+                    // Prepare form data
+                    const formData = new FormData();
+                    formData.append('audio', base64Audio);
+                    formData.append('drill_id', drillId);
+                    formData.append('duration', DrillState.duration);
+                    
+                    // Get CSRF token
+                    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                                    document.cookie.match(/csrftoken=([^;]+)/)?.[1];
+                    
+                    if (!csrftoken) {
+                        throw new Error('CSRF token not found');
+                    }
+                    
+                    // Send to API
+                    const response = await fetch('{% url "coach:analyze_drill_api" %}', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': csrftoken
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('API Error:', errorText);
+                        throw new Error(`Analysis failed: ${response.status} ${response.statusText}`);
+                    }
+                    
+                    const result = await response.json();
+                    console.log('📥 API Response:', result);
+                    
+                    if (result.success) {
+                        console.log('✅ AI analysis complete:', result);
+                        
+                        // Update stats with real model results
+                        if (result.stats) {
+                            // Update duration stat
+                            const durationEl = document.getElementById('duration-stat');
+                            if (durationEl) {
+                                const mins = Math.floor(result.duration / 60);
+                                const secs = Math.floor(result.duration % 60);
+                                durationEl.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+                            }
+                            
+                            // Update category-specific stats with REAL model data
+                            const drillType = '{{ drill.skill_type }}';
+                            
+                            if (drillType === 'filler_words') {
+                                const fillersEl = document.getElementById('fillers-stat');
+                                if (fillersEl) {
+                                    fillersEl.textContent = result.stats.fillers || 0;
+                                }
+                                // Update DrillState for consistency
+                                DrillState.fillers = result.stats.fillers || 0;
+                                DrillState.fillerScore = result.stats.filler_score || 0;
+                            } else if (drillType === 'pacing') {
+                                const wpmEl = document.getElementById('wpm-stat');
+                                if (wpmEl) {
+                                    wpmEl.textContent = result.stats.wpm || 0;
+                                }
+                                DrillState.wpm = result.stats.wpm || 0;
+                                DrillState.words = result.stats.words || 0;
+                                DrillState.pacingScore = result.stats.pacing_score || 0;
+                            } else if (drillType === 'pronunciation') {
+                                const clarityEl = document.getElementById('clarity-stat');
+                                if (clarityEl) {
+                                    const clarityPercent = Math.round((1 - (result.stats.clarity_score || 0)) * 100);
+                                    clarityEl.textContent = clarityPercent + '%';
+                                }
+                                DrillState.clarityScore = result.stats.clarity_score || 0;
+                            }
+                            
+                            // Update score
+                            const scoreEl = document.getElementById('score-stat');
+                            if (scoreEl) {
+                                // Calculate score based on model results
+                                const fillerScore = result.stats.filler_score || 0;
+                                const clarityScore = result.stats.clarity_score || 0;
+                                const pacingScore = result.stats.pacing_score || 0;
+                                
+                                // Score: higher is better (1 - model score)
+                                const overallScore = Math.round(
+                                    ((1 - fillerScore) * 0.4 + (1 - clarityScore) * 0.3 + (1 - pacingScore) * 0.3) * 100
+                                );
+                                scoreEl.textContent = overallScore;
+                                DrillState.score = overallScore;
+                            }
+                        }
+                        
+                        // Update feedback with real analysis
+                        updatePracticeFeedbackWithModels(result);
+                        resolve(result);
+                    } else {
+                        throw new Error(result.error || 'Analysis failed');
+                    }
+                } catch (error) {
+                    console.error('❌ Error in API call:', error);
+                    const feedbackDiv = document.getElementById('practice-feedback');
+                    if (feedbackDiv) {
+                        feedbackDiv.innerHTML = `<div class="feedback-message info"><p>⚠️ Analysis error: ${error.message}</p></div>`;
+                    }
+                    reject(error);
+                }
+            };
+            
+            reader.onerror = (error) => {
+                console.error('❌ FileReader error:', error);
+                reject(error);
+            };
+            
+            // Start reading
+            reader.readAsDataURL(audioBlob);
+            console.log('📖 Reading audio blob...');
+            
+        } catch (error) {
+            console.error('❌ Error setting up analysis:', error);
+            reject(error);
+        }
+    });
+}
+
+// Update practice feedback with real model results
+function updatePracticeFeedbackWithModels(result) {
+    const feedbackDiv = document.getElementById('practice-feedback');
+    const drillType = '{{ drill.skill_type }}';
+    
+    if (!feedbackDiv || !result) return;
+    
+    let feedback = '<div class="feedback-message success">';
+    
+    if (drillType === 'filler_words') {
+        const fillers = result.stats.fillers || 0;
+        const fillerScore = result.stats.filler_score || 0;
+        const fillerPercent = Math.round(fillerScore * 100);
+        
+        feedback += `<h4 style="font-weight: 700; margin-bottom: 0.5rem;">🎯 AI Analysis Results</h4>`;
+        feedback += `<p><strong>Fillers Detected:</strong> ${fillers} word${fillers !== 1 ? 's' : ''}</p>`;
+        feedback += `<p><strong>Filler Score:</strong> ${fillerPercent}% (lower is better)</p>`;
+        
+        if (fillerScore < 0.2) {
+            feedback += '<p>🌟 Excellent! Very few fillers detected. Keep it up!</p>';
+        } else if (fillerScore < 0.4) {
+            feedback += '<p>👍 Good job! You\'re reducing fillers. Keep practicing!</p>';
+        } else {
+            feedback += '<p>💪 Keep practicing to reduce fillers. Try pausing instead of using fillers.</p>';
+        }
+        
+        if (result.recommendations && result.recommendations.length > 0) {
+            feedback += '<p><strong>AI Recommendations:</strong></p><ul style="margin-left: 1.5rem;">';
+            result.recommendations.slice(0, 3).forEach(rec => {
+                feedback += `<li>${rec}</li>`;
+            });
+            feedback += '</ul>';
+        }
+    } else if (drillType === 'pacing') {
+        const wpm = result.stats.wpm || 0;
+        const pacingScore = result.stats.pacing_score || 0;
+        
+        feedback += `<h4 style="font-weight: 700; margin-bottom: 0.5rem;">🎯 AI Analysis Results</h4>`;
+        feedback += `<p><strong>Words Per Minute:</strong> ${wpm} WPM</p>`;
+        feedback += `<p><strong>Pacing Score:</strong> ${Math.round((1 - pacingScore) * 100)}%</p>`;
+        
+        if (wpm >= 120 && wpm <= 180) {
+            feedback += '<p>🌟 Perfect pace! You\'re speaking at an optimal rate.</p>';
+        } else if (wpm < 120) {
+            feedback += '<p>💪 Try to speak a bit faster. Aim for 120-180 WPM for clear communication.</p>';
+        } else {
+            feedback += '<p>🎯 Slow down slightly. Aim for 120-180 WPM for better clarity.</p>';
+        }
+    } else if (drillType === 'pronunciation') {
+        const clarityScore = result.stats.clarity_score || 0;
+        const clarityPercent = Math.round((1 - clarityScore) * 100);
+        
+        feedback += `<h4 style="font-weight: 700; margin-bottom: 0.5rem;">🎯 AI Analysis Results</h4>`;
+        feedback += `<p><strong>Clarity Score:</strong> ${clarityPercent}%</p>`;
+        
+        if (clarityPercent >= 80) {
+            feedback += '<p>🌟 Excellent clarity! Your pronunciation is very clear.</p>';
+        } else if (clarityPercent >= 60) {
+            feedback += '<p>👍 Good clarity! Keep practicing for even better results.</p>';
+        } else {
+            feedback += '<p>💪 Focus on clear articulation. Practice speaking slowly and distinctly.</p>';
+        }
+    }
+    
+    feedback += '</div>';
+    feedbackDiv.innerHTML = feedback;
+}
+
+// Update practice feedback (fallback)
+function updatePracticeFeedback() {
+    const feedbackDiv = document.getElementById('practice-feedback');
+    const drillType = '{{ drill.skill_type }}';
+    
+    if (!feedbackDiv) return;
+    
+    let feedback = '<div class="feedback-message success">';
+    
+    if (drillType === 'filler_words') {
+        feedback += `🎉 Great practice! You detected ${DrillState.fillers} filler words. `;
+        if (DrillState.fillers === 0) {
+            feedback += 'Excellent! No fillers detected.';
+        } else {
+            feedback += 'Keep practicing to reduce fillers.';
+        }
+    } else if (drillType === 'pacing') {
+        const wpm = DrillState.words > 0 && DrillState.duration > 0 
+            ? Math.floor((DrillState.words / DrillState.duration) * 60)
+            : 0;
+        feedback += `🎉 Well done! Your pace was ${wpm} words per minute. `;
+        if (wpm >= 120 && wpm <= 180) {
+            feedback += 'Perfect pace!';
+        } else if (wpm < 120) {
+            feedback += 'Try to speak a bit faster.';
+        } else {
+            feedback += 'Try to slow down slightly.';
+        }
+    } else if (drillType === 'pronunciation') {
+        feedback += `🎉 Excellent practice! Your clarity score is ${Math.floor((DrillState.duration / 30) * 100)}%. `;
+        feedback += 'Keep practicing for perfect pronunciation!';
+    }
+    
+    feedback += '</div>';
+    feedbackDiv.innerHTML = feedback;
+}
+
+// Reset recording state
+function resetRecording() {
+    DrillState.isRecording = false;
+    DrillState.startTime = null;
+    DrillState.duration = 0;
+    
+    if (DrillState.statsInterval) {
+        clearInterval(DrillState.statsInterval);
+        DrillState.statsInterval = null;
+    }
+    
+    if (idleState) idleState.style.display = 'block';
+    if (recordingState) recordingState.style.display = 'none';
+    if (playbackState) playbackState.style.display = 'none';
+    if (practiceArena) practiceArena.classList.remove('recording', 'playing');
+    if (liveStats) liveStats.style.display = 'none';
+}
+
+// Setup completion form
+function setupCompletionForm() {
+    const form = document.getElementById('completion-form');
+    if (!form) return;
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Auto-fill duration if available
+        if (DrillState.duration > 0) {
+            document.getElementById('duration_seconds').value = DrillState.duration;
+        }
+        
+        const formData = new FormData(this);
+        
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('🎉 Practice completed successfully!');
+                window.location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Form submission error:', error);
+            alert('Error submitting form: ' + error.message);
+        });
+    });
+}
+
+// Fallback components
+function createFallbackComponents() {
+    return {
+        isRecording: false,
+        startMic: async function(options) {
+            // Use native implementation
+            return startRecording();
+        },
+        stopMic: function() {
+            stopRecording();
+        }
+    };
+}
+
+console.log('✅ Drill page script loaded');
+
+  // Drill-specific interactive functions
+  {% if drill_content_type == 'poem_echo' %}
+  function highlightDifficultWords() {
+      const textElement = document.getElementById('practice-text-display');
+      if (!textElement) return;
+      
+      const tips = {{ phonetic_tips_json|default:"[]"|safe }};
+      let text = textElement.textContent;
+      
+      // Highlight words that have tips
+      tips.forEach(tip => {
+          const match = tip.match(/'([^']+)'/);
+          if (match) {
+              const word = match[1];
+              const regex = new RegExp(`\\b${word}\\b`, 'gi');
+              text = text.replace(regex, `<mark class="bg-yellow-200 px-1 rounded font-semibold">${word}</mark>`);
+          }
+      });
+      
+      textElement.innerHTML = text;
+  }
+  
+  function getNewExcerpt() {
+      // Reload page to get new excerpt (or use AJAX in future)
+      window.location.reload();
+  }
+  {% endif %}
+  
+  {% if drill_content_type == 'silence_master' %}
+  let silenceTimerInterval = null;
+  const currentChallenge = {{ current_challenge_json|safe|default:"{}" }};
+  
+  function startSilenceTimer(seconds) {
+      const timerDisplay = document.getElementById('timer-display');
+      const countdownTimer = document.getElementById('countdown-timer');
+      const startBtn = document.getElementById('start-timer-btn');
+      
+      if (!timerDisplay || !countdownTimer) return;
+      
+      let remaining = seconds;
+      timerDisplay.classList.remove('hidden');
+      if (startBtn) startBtn.disabled = true;
+      
+      countdownTimer.textContent = remaining;
+      
+      silenceTimerInterval = setInterval(() => {
+          remaining--;
+          countdownTimer.textContent = remaining;
+          
+          if (remaining <= 0) {
+              clearInterval(silenceTimerInterval);
+              if (startBtn) {
+                  startBtn.disabled = false;
+                  startBtn.textContent = '✓ Complete! Try Again?';
+              }
+              alert('Great job! You completed the silence challenge!');
+              timerDisplay.classList.add('hidden');
+          }
+      }, 1000);
+  }
+  
+  function getNewChallenge() {
+      window.location.reload();
+  }
+  {% endif %}
+  
+  {% if drill_content_type == 'filler_zap' %}
+  let zapScore = 0;
+  let zapFillerCount = 0;
+  const targetFillers = {{ target_fillers_json|safe|default:"[]" }};
+  const currentTopic = {{ current_topic_json|safe|default:"{}" }};
+  
+  function startFillerZap() {
+      const scoreDisplay = document.getElementById('score-display');
+      const currentScore = document.getElementById('current-score');
+      const fillerCount = document.getElementById('filler-count');
+      const startBtn = document.getElementById('start-zap-btn');
+      
+      if (scoreDisplay) scoreDisplay.classList.remove('hidden');
+      if (startBtn) startBtn.disabled = true;
+      
+      zapScore = 100; // Start with 100 points
+      zapFillerCount = 0;
+      
+      // Update display
+      if (currentScore) currentScore.textContent = zapScore;
+      if (fillerCount) fillerCount.textContent = 'Fillers detected: 0';
+      
+      // This would integrate with the recording system to detect fillers in real-time
+      // For now, show a message
+      alert('Start speaking! Each filler detected will reduce your score by 10 points. Aim for 0 fillers!');
+      
+      // Re-enable button after a delay (simulating game end)
+      setTimeout(() => {
+          if (startBtn) {
+              startBtn.disabled = false;
+              startBtn.textContent = '⚡ Play Again';
+          }
+      }, (currentTopic.time_limit || 60) * 1000);
+  }
+  
+  function getNewFillerZapTopic() {
+      window.location.reload();
+  }
+  {% endif %}
+  
+  {% if drill_content_type == 'silent_switcheroo' %}
+  const currentSentence = {{ current_sentence_json|safe|default:"{}" }};
+  
+  function checkRewrittenSentence() {
+      const rewrittenInput = document.getElementById('rewritten-sentence');
+      const feedbackDiv = document.getElementById('feedback-display');
+      
+      if (!rewrittenInput || !feedbackDiv || !currentSentence.cleaned) return;
+      
+      const userAnswer = rewrittenInput.value.trim().toLowerCase();
+      const correctAnswer = currentSentence.cleaned.trim().toLowerCase();
+      
+      // Simple similarity check (could be improved)
+      const similarity = calculateSimilarity(userAnswer, correctAnswer);
+      
+      if (similarity > 0.8) {
+          feedbackDiv.className = 'mt-4 bg-green-100 border-l-4 border-green-500 p-4 rounded-lg';
+          feedbackDiv.innerHTML = '<p class="text-green-800 font-semibold">✓ Great job! Your sentence is very close to the correct answer!</p>';
+      } else if (similarity > 0.5) {
+          feedbackDiv.className = 'mt-4 bg-yellow-100 border-l-4 border-yellow-500 p-4 rounded-lg';
+          feedbackDiv.innerHTML = '<p class="text-yellow-800 font-semibold">⚠ Good attempt! Try to remove more fillers and simplify the sentence.</p>';
+      } else {
+          feedbackDiv.className = 'mt-4 bg-red-100 border-l-4 border-red-500 p-4 rounded-lg';
+          feedbackDiv.innerHTML = '<p class="text-red-800 font-semibold">✗ Not quite. Try removing all filler words and simplifying the sentence.</p>';
+      }
+      feedbackDiv.classList.remove('hidden');
+  }
+  
+  function showAnswer() {
+      const answerDisplay = document.getElementById('answer-display');
+      if (answerDisplay) {
+          answerDisplay.classList.remove('hidden');
+      }
+  }
+  
+  function calculateSimilarity(str1, str2) {
+      // Simple word-based similarity
+      const words1 = str1.split(/\s+/);
+      const words2 = str2.split(/\s+/);
+      const commonWords = words1.filter(word => words2.includes(word));
+      return commonWords.length / Math.max(words1.length, words2.length);
+  }
+  
+  function getNewSentence() {
+      window.location.reload();
+  }
+  {% endif %}
+  
+  {% if drill_content_type == 'pause_powerup' %}
+  let pauseTimerInterval = null;
+  
+  function practicePauseLevel(duration, icon) {
+      const pauseTimer = document.getElementById('pause-timer');
+      const pauseCountdown = document.getElementById('pause-countdown');
+      
+      if (!pauseTimer || !pauseCountdown) return;
+      
+      pauseTimer.classList.remove('hidden');
+      let remaining = duration;
+      pauseCountdown.textContent = remaining;
+      
+      if (pauseTimerInterval) clearInterval(pauseTimerInterval);
+      
+      pauseTimerInterval = setInterval(() => {
+          remaining--;
+          pauseCountdown.textContent = remaining;
+          
+          if (remaining <= 0) {
+              clearInterval(pauseTimerInterval);
+              setTimeout(() => {
+                  pauseTimer.classList.add('hidden');
+              }, 500);
+          }
+      }, 1000);
+  }
+  
+  function getNewPauseText() {
+      window.location.reload();
+  }
+  {% endif %}
+  
+  {% if drill_content_type == 'filler_hunt' %}
+  const currentHuntText = {{ current_text_json|safe|default:"{}" }};
+  let selectedFillers = [];
+  
+  function initializeFillerHunt() {
+      if (!currentHuntText || !currentHuntText.text) return;
+      
+      const textDisplay = document.getElementById('hunt-text-display');
+      if (!textDisplay) return;
+      
+      // Split text into clickable words
+      const words = currentHuntText.text.split(/(\s+)/);
+      textDisplay.innerHTML = words.map((word, index) => {
+          if (/\s+/.test(word)) return word; // Preserve whitespace
+          const isFiller = currentHuntText.fillers && currentHuntText.fillers.includes(word.toLowerCase().replace(/[.,!?;:]/g, ''));
+          return `<span class="filler-word ${isFiller ? 'cursor-pointer hover:bg-yellow-200' : ''}" data-word="${word}" data-is-filler="${isFiller}" onclick="selectFillerWord('${word}')">${word}</span>`;
+      }).join('');
+  }
+  
+  function selectFillerWord(word) {
+      const cleanWord = word.toLowerCase().replace(/[.,!?;:]/g, '');
+      
+      if (!currentHuntText.fillers || !currentHuntText.fillers.includes(cleanWord)) {
+          alert('That\'s not a filler word! Try again.');
+          return;
+      }
+      
+      if (selectedFillers.includes(cleanWord)) {
+          // Remove if already selected
+          selectedFillers = selectedFillers.filter(f => f !== cleanWord);
+      } else {
+          // Add if not selected
+          selectedFillers.push(cleanWord);
+      }
+      
+      updateFillerHuntDisplay();
+  }
+  
+  function updateFillerHuntDisplay() {
+      const selectedDiv = document.getElementById('selected-fillers');
+      const foundCount = document.getElementById('found-count');
+      
+      if (selectedDiv) {
+          if (selectedFillers.length === 0) {
+              selectedDiv.innerHTML = '<span class="text-gray-400 text-sm">Selected fillers will appear here...</span>';
+          } else {
+              selectedDiv.innerHTML = selectedFillers.map(filler => 
+                  `<span class="px-3 py-2 bg-purple-100 text-purple-800 rounded-lg font-bold text-sm">${filler}</span>`
+              ).join('');
+          }
+      }
+      
+      if (foundCount) {
+          foundCount.textContent = selectedFillers.length;
+      }
+  }
+  
+  function checkFillerHunt() {
+      const feedbackDiv = document.getElementById('hunt-feedback');
+      const correctFillers = document.getElementById('correct-fillers');
+      
+      if (!feedbackDiv || !currentHuntText.fillers) return;
+      
+      const correctCount = selectedFillers.filter(f => currentHuntText.fillers.includes(f)).length;
+      const totalFillers = currentHuntText.fillers.length;
+      const accuracy = (correctCount / totalFillers) * 100;
+      
+      if (accuracy === 100) {
+          feedbackDiv.className = 'mt-4 bg-green-100 border-l-4 border-green-500 p-4 rounded-lg';
+          feedbackDiv.innerHTML = '<p class="text-green-800 font-semibold">✓ Perfect! You found all the fillers!</p>';
+      } else if (accuracy >= 70) {
+          feedbackDiv.className = 'mt-4 bg-yellow-100 border-l-4 border-yellow-500 p-4 rounded-lg';
+          feedbackDiv.innerHTML = `<p class="text-yellow-800 font-semibold">⚠ Good job! You found ${correctCount} out of ${totalFillers} fillers (${Math.round(accuracy)}%)</p>`;
+      } else {
+          feedbackDiv.className = 'mt-4 bg-red-100 border-l-4 border-red-500 p-4 rounded-lg';
+          feedbackDiv.innerHTML = `<p class="text-red-800 font-semibold">✗ You found ${correctCount} out of ${totalFillers} fillers. Keep practicing!</p>`;
+      }
+      
+      feedbackDiv.classList.remove('hidden');
+      if (correctFillers) correctFillers.classList.remove('hidden');
+  }
+  
+  function getNewHuntText() {
+      window.location.reload();
+  }
+  
+  // Initialize on page load
+  document.addEventListener('DOMContentLoaded', function() {
+      initializeFillerHunt();
+  });
+  {% endif %}
+  
+  {% if drill_content_type == 'word_swap' %}
+  function getNewTopic() {
+      window.location.reload();
+  }
+  {% endif %}
+  
+  {% if drill_content_type == 'echo_elimination' %}
+  const currentPattern = {{ current_pattern_json|safe|default:"{}" }};
+  
+  function showCleanedPattern() {
+      const cleanedPattern = document.getElementById('cleaned-pattern');
+      if (cleanedPattern) {
+          cleanedPattern.classList.remove('hidden');
+      }
+  }
+  
+  function getNewEchoPattern() {
+      window.location.reload();
+  }
+  {% endif %}
+  
+  {% if drill_content_type == 'mirror_mimic' %}
+  function getNewTwister() {
+      window.location.reload();
+  }
+  {% endif %}
+  
+  {% if drill_content_type == 'vowel_vortex' %}
+  const vowelData = {{ vowel_sentences_json|safe|default:"{}" }};
+  const vowelWordsData = {{ vowel_words_json|safe|default:"{}" }};
+  const vowels = ['A', 'E', 'I', 'O', 'U'];
+  
+  // Initialize wheel segments on page load
+  document.addEventListener('DOMContentLoaded', function() {
+      const wheel = document.getElementById('vowel-wheel');
+      if (wheel) {
+          vowels.forEach((vowel, index) => {
+              const rotation = index * 72; // 360 / 5 = 72 degrees per segment
+              const segment = document.createElement('div');
+              segment.className = 'absolute w-full h-full';
+              segment.style.transform = `rotate(${rotation}deg)`;
+              const label = document.createElement('div');
+              label.className = 'absolute top-0 left-1/2 transform -translate-x-1/2 text-2xl font-bold text-purple-600';
+              label.style.marginTop = '1rem';
+              label.textContent = vowel;
+              segment.appendChild(label);
+              wheel.appendChild(segment);
+          });
+      }
+  });
+  
+  function spinVowelWheel() {
+      const wheel = document.getElementById('vowel-wheel');
+      const vowelDisplay = document.getElementById('selected-vowel-display');
+      const vowelContent = document.getElementById('vowel-content');
+      const selectedVowel = document.getElementById('selected-vowel');
+      const vowelWords = document.getElementById('vowel-words');
+      const vowelSentence = document.getElementById('vowel-sentence');
+      const spinBtn = document.getElementById('spin-vowel-btn');
+      
+      if (!wheel || !vowelData) return;
+      
+      // Disable button during spin
+      if (spinBtn) spinBtn.disabled = true;
+      
+      // Random rotation (multiple spins for effect)
+      const vowels = ['A', 'E', 'I', 'O', 'U'];
+      const randomVowel = vowels[Math.floor(Math.random() * vowels.length)];
+      const baseRotation = vowels.indexOf(randomVowel) * 72;
+      const spins = 5; // Number of full rotations
+      const totalRotation = spins * 360 + baseRotation;
+      
+      // Apply rotation
+      wheel.style.transition = 'transform 3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+      wheel.style.transform = `rotate(${totalRotation}deg)`;
+      
+      // Update display after spin
+      setTimeout(() => {
+          if (vowelDisplay) vowelDisplay.textContent = randomVowel;
+          if (selectedVowel) selectedVowel.textContent = randomVowel;
+          
+          // Show content
+          if (vowelContent) vowelContent.classList.remove('hidden');
+          
+          // Populate words
+          if (vowelWords && vowelWordsData[randomVowel]) {
+              vowelWords.innerHTML = '';
+              vowelWordsData[randomVowel].forEach(word => {
+                  const wordSpan = document.createElement('span');
+                  wordSpan.className = 'px-3 py-2 bg-purple-100 text-purple-800 rounded-lg font-semibold text-sm';
+                  wordSpan.textContent = word;
+                  vowelWords.appendChild(wordSpan);
+              });
+          }
+          
+          // Populate sentence
+          if (vowelSentence && vowelData[randomVowel]) {
+              const sentences = vowelData[randomVowel];
+              const randomSentence = sentences[Math.floor(Math.random() * sentences.length)];
+              vowelSentence.textContent = randomSentence;
+          }
+          
+          // Re-enable button
+          if (spinBtn) spinBtn.disabled = false;
+      }, 3000);
+  }
+  {% endif %}
+  
+  {% if drill_content_type == 'mirror_mimic' %}
+  let repetitionCount = 0;
+  let repetitionInterval = null;
+  const selectedTwister = {{ selected_twister_json|safe|default:"{}" }};
+  
+  function startRepetitionPractice() {
+      const counter = document.getElementById('repetition-counter');
+      const progressDiv = document.getElementById('repetition-progress');
+      const progressBar = document.getElementById('repetition-progress-bar');
+      const startBtn = document.getElementById('start-repetition-btn');
+      
+      if (!selectedTwister || !selectedTwister.repetitions) return;
+      
+      const totalRepetitions = selectedTwister.repetitions;
+      repetitionCount = 0;
+      
+      if (startBtn) startBtn.disabled = true;
+      if (progressDiv) progressDiv.classList.remove('hidden');
+      
+      // Update counter and progress
+      repetitionInterval = setInterval(() => {
+          repetitionCount++;
+          if (counter) counter.textContent = repetitionCount;
+          
+          const percentage = (repetitionCount / totalRepetitions) * 100;
+          if (progressBar) progressBar.style.width = percentage + '%';
+          
+          if (repetitionCount >= totalRepetitions) {
+              clearInterval(repetitionInterval);
+              if (startBtn) {
+                  startBtn.disabled = false;
+                  startBtn.textContent = '✓ Complete! Practice Again?';
+              }
+              // Show completion message
+              alert(`Great job! You completed ${totalRepetitions} repetitions of "${selectedTwister.text}"`);
+          }
+      }, 2000); // 2 seconds per repetition
+  }
+  {% endif %}
+  
+  {% if drill_content_type == 'phonetic_puzzle' %}
+  let draggedSymbol = null;
+  
+  function allowDrop(ev) {
+      ev.preventDefault();
+  }
+  
+  function drag(ev) {
+      draggedSymbol = ev.target;
+      ev.dataTransfer.effectAllowed = 'move';
+  }
+  
+  function drop(ev) {
+      ev.preventDefault();
+      const dropZone = ev.currentTarget;
+      
+      if (draggedSymbol && dropZone) {
+          // Remove placeholder text
+          const placeholder = dropZone.querySelector('span.text-gray-400');
+          if (placeholder) placeholder.remove();
+          
+          // Clone and add symbol to drop zone
+          const cloned = draggedSymbol.cloneNode(true);
+          cloned.classList.remove('cursor-move');
+          cloned.classList.add('cursor-default');
+          cloned.draggable = false;
+          cloned.onclick = function() {
+              this.remove();
+              if (dropZone.children.length === 0) {
+                  const placeholderSpan = document.createElement('span');
+                  placeholderSpan.className = 'text-gray-400 text-sm';
+                  placeholderSpan.textContent = 'Drag symbols here to build the phonetic spelling';
+                  dropZone.appendChild(placeholderSpan);
+              }
+          };
+          dropZone.appendChild(cloned);
+      }
+  }
+  
+  function checkPuzzle(index, correctAnswer) {
+      const dropZone = document.getElementById(`puzzle-drop-${index}`);
+      const feedbackDiv = document.getElementById(`puzzle-feedback-${index}`);
+      const correctSpan = document.getElementById(`correct-answer-${index}`);
+      
+      if (!dropZone || !feedbackDiv) return;
+      
+      // Get user's answer
+      const userAnswer = Array.from(dropZone.querySelectorAll('.phonetic-symbol')).map(el => el.textContent).join('');
+      const cleanUserAnswer = '/' + userAnswer + '/';
+      const cleanCorrect = correctAnswer;
+      
+      // Show correct answer
+      if (correctSpan) {
+          correctSpan.classList.remove('hidden');
+      }
+      
+      // Check answer
+      if (cleanUserAnswer === cleanCorrect) {
+          feedbackDiv.className = 'mt-3 bg-green-100 border-l-4 border-green-500 p-4 rounded-lg';
+          feedbackDiv.innerHTML = '<p class="text-green-800 font-semibold">✓ Correct! Great job!</p>';
+      } else {
+          feedbackDiv.className = 'mt-3 bg-red-100 border-l-4 border-red-500 p-4 rounded-lg';
+          feedbackDiv.innerHTML = `<p class="text-red-800 font-semibold">✗ Not quite. Your answer: ${cleanUserAnswer || 'empty'}</p><p class="text-sm text-red-700 mt-1">Try again!</p>`;
+      }
+      feedbackDiv.classList.remove('hidden');
+  }
+  
+  function getNewPuzzle() {
+      window.location.reload();
+  }
+  
+  // Drag and drop is already initialized via ondragstart attribute
+  {% endif %}
+  
+  {% if drill_content_type == 'pencil_precision' %}
+  let pencilRecordingState = 'idle'; // 'idle', 'before', 'after'
+  
+  function startPencilRecording(phase) {
+      // phase: 'before' or 'after'
+      pencilRecordingState = phase;
+      // This would integrate with the main recording system
+      // For now, just show a message
+      const recordingDiv = document.getElementById(`pencil-${phase}-recording`);
+      if (recordingDiv) {
+          recordingDiv.innerHTML = '<div class="text-red-500 animate-pulse">🔴 Recording... Click "Stop Recording" in practice arena to stop.</div>';
+      }
+  }
+  
+  function getNewPencilText() {
+      window.location.reload();
+  }
+  {% endif %}
+  
+  {% if drill_content_type == 'shadow_superhero' %}
+  function getNewScript() {
+      window.location.reload();
+  }
+  {% endif %}
+  
+  {% if drill_content_type == 'metronome' %}
+  let metronomeInterval = null;
+  let metronomeAudioContext = null;
+  
+  function toggleMetronome() {
+      const btn = document.getElementById('metronome-toggle');
+      const beatDiv = document.getElementById('metronome-beat');
+      const beatVisual = document.getElementById('beat-visual');
+      const bpmSelect = document.getElementById('bpm-select');
+      
+      if (metronomeInterval) {
+          // Stop metronome
+          clearInterval(metronomeInterval);
+          metronomeInterval = null;
+          btn.textContent = '▶️ Start Metronome';
+          beatDiv.classList.add('hidden');
+      } else {
+          // Start metronome
+          const bpm = parseInt(bpmSelect.value);
+          const intervalMs = (60 / bpm) * 1000;
+          
+          btn.textContent = '⏸️ Stop Metronome';
+          beatDiv.classList.remove('hidden');
+          
+          // Visual beat
+          metronomeInterval = setInterval(() => {
+              beatVisual.style.transform = 'scale(1.2)';
+              beatVisual.style.backgroundColor = '#ef4444';
+              setTimeout(() => {
+                  beatVisual.style.transform = 'scale(1)';
+                  beatVisual.style.backgroundColor = '#3b82f6';
+              }, 100);
+          }, intervalMs);
+          
+          // Play audio beep (if AudioContext is available)
+          try {
+              if (!metronomeAudioContext) {
+                  metronomeAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+              }
+              const oscillator = metronomeAudioContext.createOscillator();
+              const gainNode = metronomeAudioContext.createGain();
+              oscillator.connect(gainNode);
+              gainNode.connect(metronomeAudioContext.destination);
+              oscillator.frequency.value = 800;
+              gainNode.gain.value = 0.1;
+              oscillator.start();
+              oscillator.stop(metronomeAudioContext.currentTime + 0.1);
+          } catch (e) {
+              console.log('AudioContext not available:', e);
+          }
+      }
+  }
+  
+  function getNewMetronomeText() {
+      window.location.reload();
+  }
+  {% endif %}
+  
+  {% if drill_content_type == 'pause_pyramid' %}
+  function practicePauseLevel(level, duration) {
+      const timerDiv = document.getElementById('pause-timer');
+      const countdownDiv = document.getElementById('pause-countdown');
+      
+      timerDiv.classList.remove('hidden');
+      let remaining = duration;
+      
+      const countdown = setInterval(() => {
+          countdownDiv.textContent = remaining.toFixed(1);
+          remaining -= 0.1;
+          if (remaining <= 0) {
+              clearInterval(countdown);
+              countdownDiv.textContent = '✓';
+              setTimeout(() => {
+                  timerDiv.classList.add('hidden');
+              }, 1000);
+          }
+      }, 100);
+  }
+  
+  function getNewPyramidText() {
+      window.location.reload();
+  }
+  {% endif %}
+  
+  {% if drill_content_type == 'slow_motion' %}
+  function updateSpeedDisplay() {
+      const slider = document.getElementById('speed-slider');
+      const display = document.getElementById('speed-display');
+      if (slider && display) {
+          display.textContent = slider.value + 'x';
+      }
+  }
+  
+  document.addEventListener('DOMContentLoaded', function() {
+      const slider = document.getElementById('speed-slider');
+      if (slider) {
+          slider.addEventListener('input', updateSpeedDisplay);
+      }
+  });
+  
+  function getNewStory() {
+      window.location.reload();
+  }
+  {% endif %}
+  
+  {% if drill_content_type == 'beat_drop' %}
+  let beatInterval = null;
+  
+  function toggleBeat() {
+      const btn = document.getElementById('beat-toggle');
+      const visualizer = document.getElementById('beat-visualizer');
+      const canvas = document.getElementById('beat-canvas');
+      
+      if (beatInterval) {
+          clearInterval(beatInterval);
+          beatInterval = null;
+          btn.textContent = '🎵 Start Beat';
+          visualizer.classList.add('hidden');
+      } else {
+          const dialogue = {{ selected_dialogue_json|safe }};
+          const bpm = dialogue.bpm;
+          const intervalMs = (60 / bpm) * 1000;
+          
+          btn.textContent = '⏸️ Stop Beat';
+          visualizer.classList.remove('hidden');
+          
+          // Draw beat visualization
+          if (canvas) {
+              const ctx = canvas.getContext('2d');
+              let beatIndex = 0;
+              
+              beatInterval = setInterval(() => {
+                  ctx.clearRect(0, 0, canvas.width, canvas.height);
+                  ctx.fillStyle = beatIndex % 2 === 0 ? '#ef4444' : '#3b82f6';
+                  ctx.fillRect(beatIndex * 50, 0, 40, canvas.height);
+                  beatIndex = (beatIndex + 1) % (canvas.width / 50);
+              }, intervalMs / 2);
+          }
+      }
+  }
+  
+  function getNewDialogue() {
+      window.location.reload();
+  }
+  {% endif %}
+  
+  {% if drill_content_type == 'timer_tag' %}
+  function startTimerChallenge(duration) {
+      const timerDisplay = document.getElementById('challenge-timer');
+      const progressDiv = document.getElementById('timer-progress');
+      const progressBar = document.getElementById('timer-progress-bar');
+      const startBtn = document.getElementById('timer-start-btn');
+      
+      if (startBtn) startBtn.disabled = true;
+      if (progressDiv) progressDiv.classList.remove('hidden');
+      
+      let remaining = duration;
+      const updateInterval = setInterval(() => {
+          if (timerDisplay) timerDisplay.textContent = Math.max(0, remaining);
+          if (progressBar) {
+              const percentage = (remaining / duration) * 100;
+              progressBar.style.width = percentage + '%';
+          }
+          
+          remaining--;
+          if (remaining < 0) {
+              clearInterval(updateInterval);
+              if (timerDisplay) timerDisplay.textContent = 'Time\'s up!';
+              if (progressBar) progressBar.style.width = '0%';
+              if (startBtn) startBtn.disabled = false;
+          }
+      }, 1000);
+  }
+  {% endif %}
+  
+  {% if drill_content_type == 'echo_chamber' %}
+  let highlightInterval = null;
+  let currentWordIndex = 0;
+  let currentWords = [];
+  let currentWPM = 140;
+  let originalText = '';
+  
+  function practiceEscalationLevel(speed, wpm, icon) {
+      // Stop any existing highlighting
+      stopWordHighlighting();
+      
+      // Set current WPM
+      currentWPM = wpm;
+      const wpmDisplay = document.getElementById('current-wpm-display');
+      const wpmValue = document.getElementById('wpm-value');
+      if (wpmDisplay) wpmDisplay.classList.remove('hidden');
+      if (wpmValue) wpmValue.textContent = wpm;
+      
+      // Get practice text
+      const textElement = document.getElementById('practice-text-display');
+      if (!textElement) return;
+      
+      originalText = textElement.textContent || textElement.innerText;
+      currentWords = originalText.split(/\s+/).filter(word => word.length > 0);
+      currentWordIndex = 0;
+      
+      // Reset text display
+      textElement.innerHTML = originalText.split(/\s+/).map((word, idx) => {
+          return `<span id="word-${idx}" class="word-item">${word}</span>`;
+      }).join(' ');
+      
+      // Show start button
+      const startBtn = document.getElementById('start-highlight-btn');
+      const stopBtn = document.getElementById('stop-highlight-btn');
+      if (startBtn) startBtn.classList.remove('hidden');
+      if (stopBtn) stopBtn.classList.remove('hidden');
+      
+      // Automatically start highlighting after a short delay
+      setTimeout(() => {
+          startWordHighlighting();
+      }, 500);
+  }
+  
+  function startWordHighlighting() {
+      if (highlightInterval) return;
+      
+      // Calculate time per word based on WPM
+      // Average words per minute = WPM
+      // Time per word = 60 seconds / WPM
+      const timePerWord = (60 / currentWPM) * 1000; // in milliseconds
+      
+      // Highlight words one by one
+      highlightInterval = setInterval(() => {
+          // Remove highlight from previous word
+          if (currentWordIndex > 0) {
+              const prevWord = document.getElementById(`word-${currentWordIndex - 1}`);
+              if (prevWord) {
+                  prevWord.classList.remove('bg-yellow-300', 'font-bold', 'text-yellow-900', 'px-1', 'rounded', 'transition-all');
+                  prevWord.classList.add('text-gray-600');
+              }
+          }
+          
+          // Highlight current word
+          const currentWord = document.getElementById(`word-${currentWordIndex}`);
+          if (currentWord) {
+              currentWord.classList.remove('text-gray-600');
+              currentWord.classList.add('bg-yellow-300', 'font-bold', 'text-yellow-900', 'px-1', 'rounded', 'transition-all');
+              
+              // Scroll into view if needed
+              currentWord.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+          }
+          
+          currentWordIndex++;
+          
+          // Reset if we've reached the end
+          if (currentWordIndex >= currentWords.length) {
+              stopWordHighlighting();
+              // Optionally restart after a pause
+              setTimeout(() => {
+                  currentWordIndex = 0;
+                  startWordHighlighting();
+              }, 2000);
+          }
+      }, timePerWord);
+      
+      // Update button states
+      const startBtn = document.getElementById('start-highlight-btn');
+      const stopBtn = document.getElementById('stop-highlight-btn');
+      if (startBtn) startBtn.classList.add('hidden');
+      if (stopBtn) stopBtn.classList.remove('hidden');
+  }
+  
+  function stopWordHighlighting() {
+      if (highlightInterval) {
+          clearInterval(highlightInterval);
+          highlightInterval = null;
+      }
+      
+      // Remove all highlights
+      currentWords.forEach((word, idx) => {
+          const wordElement = document.getElementById(`word-${idx}`);
+          if (wordElement) {
+              wordElement.classList.remove('bg-yellow-300', 'font-bold', 'text-yellow-900', 'px-1', 'rounded');
+              wordElement.classList.add('text-gray-800');
+          }
+      });
+      
+      // Update button states
+      const startBtn = document.getElementById('start-highlight-btn');
+      const stopBtn = document.getElementById('stop-highlight-btn');
+      if (startBtn) startBtn.classList.remove('hidden');
+      if (stopBtn) stopBtn.classList.add('hidden');
+      
+      currentWordIndex = 0;
+  }
+  
+  function getNewEchoText() {
+      stopWordHighlighting();
+      window.location.reload();
+  }
+  
+  // Initialize on page load
+  document.addEventListener('DOMContentLoaded', function() {
+      const textElement = document.getElementById('practice-text-display');
+      if (textElement) {
+          originalText = textElement.textContent || textElement.innerText;
+          // Pre-format words for highlighting
+          const words = originalText.split(/\s+/).filter(word => word.length > 0);
+          textElement.innerHTML = words.map((word, idx) => {
+              return `<span id="word-${idx}" class="word-item text-gray-800">${word}</span>`;
+          }).join(' ');
+      }
+  });
+  {% endif %}
+  
+  {% if drill_content_type == 'rhythm_ruler' %}
+  function practiceRhythmPattern(pattern, example) {
+      const visualizer = document.getElementById('rhythm-visualizer');
+      const display = document.getElementById('rhythm-display');
+      
+      if (visualizer) visualizer.classList.remove('hidden');
+      if (display) display.textContent = pattern;
+      
+      // Visualize the pattern
+      const patternParts = pattern.split('-');
+      let index = 0;
+      const patternInterval = setInterval(() => {
+          if (display) {
+              display.textContent = patternParts[index];
+              display.style.color = patternParts[index] === patternParts[index].toUpperCase() ? '#dc2626' : '#059669';
+          }
+          index = (index + 1) % patternParts.length;
+      }, 500);
+      
+      setTimeout(() => {
+          clearInterval(patternInterval);
+          if (display) display.textContent = 'Now speak: ' + example;
+      }, 5000);
+  }
+  
+  function getNewRhythmText() {
+      window.location.reload();
+  }
+  {% endif %}
+  
+  {% if drill_content_type == 'speed_controller' %}
+  function practiceSpeedLevel(name, wpm) {
+      alert(`Practice at ${name} speed (${wpm} WPM). Read the practice text maintaining this pace!`);
+  }
+  
+  function getNewSpeedText() {
+      window.location.reload();
+  }
+  {% endif %}
+  </script>
+{% endblock %}
+

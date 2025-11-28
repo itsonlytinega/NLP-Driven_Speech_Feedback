@@ -58,6 +58,11 @@ data/cleaned/
 *.pt
 *.h5
 *.ckpt
+*.pth
+*.safetensors
+coach/models/bert_speech/
+coach/models/hybrid_bert_wav2vec/
+coach/models/hybrid_bert_wav2vec_v2_20251119/
 
 # Logs
 logs/

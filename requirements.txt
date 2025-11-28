@@ -1,0 +1,44 @@
+--extra-index-url https://download.pytorch.org/whl/cu118
+
+Django==5.0.6
+psycopg2-binary==2.9.9
+python-dotenv==1.0.0
+spacy==3.7.2
+Pillow==10.1.0
+django-crispy-forms==2.1
+crispy-tailwind==0.5.0
+django-otp==1.2.0
+qrcode==7.4.2
+django-phonenumber-field==7.1.0
+djangorestframework==3.14.0
+django-filter==23.5
+pyotp==2.9.0
+webauthn==1.11.1
+
+# GPU-ready NLP stack
+torch==2.2.0
+torchvision==0.17.0
+torchaudio==2.2.0
+onnxruntime-gpu==1.20.2
+transformers==4.35.2
+datasets==2.14.6
+django-redis==5.4.0
+celery[redis]==5.3.6
+openai-whisper==20231117
+
+# Additional ML and reporting dependencies
+scipy==1.14.1
+numpy==1.26.4
+scikit-learn==1.5.2
+pandas==2.2.2
+matplotlib==3.9.2
+seaborn==0.13.2
+jinja2==3.1.2
+weasyprint==60.2
+textstat==0.7.3
+librosa==0.10.1
+soundfile==0.12.1
+tqdm==4.66.1
+xgboost==2.0.3
+yt-dlp==2023.11.16
+

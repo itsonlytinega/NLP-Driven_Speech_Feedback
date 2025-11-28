@@ -1,0 +1,17 @@
+Your Two-Factor Authentication Code - {{ site_name }}
+
+Hello {{ user.first_name }},
+
+You requested a two-factor authentication code for your {{ site_name }} account. Use the code below to complete your login:
+
+{{ otp_code }}
+
+This code will expire in 5 minutes. Never share this code with anyone, including {{ site_name }} staff. We will never ask for your 2FA code via email, phone, or any other method.
+
+If you didn't request this code, please ignore this email and consider changing your password immediately.
+
+---
+{{ site_name }}
+This email was sent from {{ site_name }}. If you have any questions, please contact our support team.
+
+

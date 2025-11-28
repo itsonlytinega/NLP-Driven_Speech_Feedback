@@ -1,0 +1,679 @@
+{% extends 'coach/base.html' %}
+{% load static %}
+{% load math_filters %}
+
+{% block title %}Session #{{ session.id }} - Verbal Coach{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <a href="{% url 'speech_sessions:session_list' %}" 
+                   class="mr-4 text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-arrow-left text-xl"></i>
+                </a>
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Session #{{ session.id }}</h1>
+                    <p class="mt-2 text-sm text-gray-700">
+                        Created on {{ session.date|date:"F j, Y \a\t g:i A" }}
+                    </p>
+                </div>
+            </div>
+            <div class="flex space-x-3">
+                <a href="{% url 'speech_sessions:session_update' session.pk %}" 
+                   class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <i class="fas fa-edit mr-2"></i>Edit
+                </a>
+                <a href="{% url 'speech_sessions:session_delete' session.pk %}" 
+                   class="inline-flex items-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    <i class="fas fa-trash mr-2"></i>Delete
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Main Content -->
+        <div class="lg:col-span-2">
+            <!-- Status Card -->
+            <div class="bg-white shadow rounded-lg mb-8">
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-900">Session Status</h3>
+                            <div class="mt-2">
+                                <span class="inline-flex px-3 py-1 text-sm font-semibold rounded-full {{ session.get_status_display_class }}">
+                                    <i class="fas fa-{% if session.status == 'pending' %}clock{% elif session.status == 'analyzed' %}check-circle{% else %}archive{% endif %} mr-2"></i>
+                                    {{ session.get_status_display }}
+                                </span>
+                            </div>
+                        </div>
+                        {% if session.confidence_score %}
+                        <div class="text-right">
+                            <div class="text-2xl font-bold text-gray-900">{{ session.confidence_score|floatformat:0 }}%</div>
+                            <div class="text-sm text-gray-500">Confidence</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audio Player -->
+            {% if session.audio_file %}
+            <div class="bg-white shadow rounded-lg mb-8">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Audio Recording</h3>
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <audio controls class="w-full">
+                            <source src="{{ session.audio_file.url }}" type="audio/mpeg">
+                            <source src="{{ session.audio_file.url }}" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                        <div class="mt-2 text-sm text-gray-500">
+                            <i class="fas fa-file-audio mr-1"></i>
+                            <a href="{{ session.audio_file.url }}" download class="text-indigo-600 hover:text-indigo-800">
+                                Download Audio File
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Transcription -->
+            {% if session.transcription %}
+            <div class="bg-white shadow rounded-lg mb-8">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Transcription</h3>
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="prose max-w-none">
+                            <p class="text-gray-700 leading-relaxed">{{ session.transcription|linebreaks }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- NLP Analysis Results -->
+            {% if session.status == 'analyzed' %}
+            <div class="bg-white shadow rounded-lg mb-8">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">
+                        <i class="fas fa-brain mr-2 text-indigo-600"></i>
+                        NLP Analysis Results
+                    </h3>
+                    
+                    {% if not session.transcription and session.audio_file %}
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h4 class="text-sm font-semibold text-yellow-800">⚠️ Incomplete Analysis</h4>
+                                <p class="mt-1 text-sm text-yellow-700">
+                                    This session was analyzed with an older version. Click "Re-analyze with NLP" to get full analysis including WPM, detailed feedback, and drill recommendations.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Pacing Metrics -->
+                    {% if session.pacing_analysis %}
+                    <div class="mb-6">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-3">Speaking Pace</h4>
+                        <div class="bg-blue-50 rounded-lg p-4">
+                            <div class="grid grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <p class="text-xs text-gray-600">Words Per Minute</p>
+                                    <p class="text-2xl font-bold text-blue-700">
+                                        {% if wpm %}
+                                            {{ wpm }}
+                                        {% elif session.duration and session.transcription %}
+                                            {% widthratio session.transcription|wordcount session.duration 60 as calculated_wpm %}
+                                            {{ calculated_wpm }}
+                                        {% else %}
+                                            --
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-600">Speaking Rate</p>
+                                    <p class="text-sm font-medium text-blue-800 mt-2">
+                                        {{ session.pacing_analysis|truncatewords:10 }}
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <!-- Actionable Advice -->
+                            <div class="bg-white rounded-lg p-4 border-l-4 {% if wpm %}{% if wpm > 180 %}border-red-500{% elif wpm < 120 %}border-yellow-500{% else %}border-green-500{% endif %}{% else %}border-blue-500{% endif %}">
+                                <div class="flex items-start">
+                                    <i class="fas fa-info-circle text-blue-600 mr-2 mt-1"></i>
+                                    <div class="flex-1">
+                                        <p class="text-sm font-semibold text-gray-900 mb-2">What This Means:</p>
+                                        <p class="text-xs text-gray-700 mb-3">
+                                            {% if wpm %}
+                                                {% if wpm > 180 %}
+                                                    Your speaking rate is <strong>very fast</strong> ({{ wpm }} WPM). Ideal rate is 120-180 WPM for clear communication.
+                                                {% elif wpm < 120 %}
+                                                    Your speaking rate is <strong>slower</strong> ({{ wpm }} WPM). Aim for 120-180 WPM to maintain engagement.
+                                                {% else %}
+                                                    Your speaking rate is <strong>optimal</strong> ({{ wpm }} WPM). This range (120-180 WPM) is ideal for clear communication.
+                                                {% endif %}
+                                            {% else %}
+                                                {{ session.pacing_analysis|truncatewords:15 }}
+                                            {% endif %}
+                                        </p>
+                                        <p class="text-sm font-semibold text-gray-900 mb-2">How to Improve:</p>
+                                        <ul class="text-xs text-gray-700 space-y-1 list-disc list-inside">
+                                            {% if wpm %}
+                                                {% if wpm > 180 %}
+                                                    <li>Practice pausing after key points to slow your pace</li>
+                                                    <li>Record yourself reading at 150 WPM and match that rhythm</li>
+                                                    <li>Use breathing exercises to control your speaking speed</li>
+                                                {% elif wpm < 120 %}
+                                                    <li>Practice reading passages to increase your natural pace</li>
+                                                    <li>Record yourself speaking and aim for 140-160 WPM</li>
+                                                    <li>Work on reducing long pauses between sentences</li>
+                                                {% else %}
+                                                    <li>Maintain this excellent pace! Keep practicing to stay consistent</li>
+                                                    <li>Focus on natural pauses at sentence boundaries</li>
+                                                {% endif %}
+                                            {% else %}
+                                                <li>Practice with pacing drills to improve rhythm</li>
+                                                <li>Record yourself and aim for 140-160 words per minute</li>
+                                            {% endif %}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Filler Word Analysis -->
+                    <div class="mb-6">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-3">Filler Words</h4>
+                        <div class="bg-yellow-50 rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <p class="text-xs text-gray-600">Total Detected</p>
+                                    <p class="text-2xl font-bold text-yellow-700">{{ session.filler_count }}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xs text-gray-600">Frequency</p>
+                                    <p class="text-lg font-medium text-yellow-800">
+                                        {{ session.filler_rate|floatformat:1 }}/min
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <div class="flex justify-between text-xs text-gray-600 mb-1">
+                                    <span>Filler Density</span>
+                                    <span>{{ session.filler_rate|floatformat:2 }}%</span>
+                                </div>
+                                <div class="bg-gray-200 rounded-full h-2">
+                                    <div class="h-2 rounded-full {% if session.filler_rate > 5 %}bg-red-500{% elif session.filler_rate > 3 %}bg-yellow-500{% else %}bg-green-500{% endif %}" 
+                                         style="width: {% widthratio session.filler_rate 10 100 %}%"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Actionable Advice -->
+                            <div class="bg-white rounded-lg p-4 border-l-4 {% if session.filler_rate > 5 %}border-red-500{% elif session.filler_rate > 3 %}border-yellow-500{% else %}border-green-500{% endif %}">
+                                <div class="flex items-start">
+                                    <i class="fas fa-info-circle text-yellow-600 mr-2 mt-1"></i>
+                                    <div class="flex-1">
+                                        <p class="text-sm font-semibold text-gray-900 mb-2">What This Means:</p>
+                                        <p class="text-xs text-gray-700 mb-3">
+                                            {% if session.filler_rate > 5 %}
+                                                You're using fillers <strong>frequently</strong> ({{ session.filler_rate|floatformat:1 }}/min). This can reduce clarity and professionalism. Target: &lt;3 fillers/minute.
+                                            {% elif session.filler_rate > 3 %}
+                                                You have <strong>moderate</strong> filler usage ({{ session.filler_rate|floatformat:1 }}/min). With practice, you can reduce this further. Target: &lt;3 fillers/minute.
+                                            {% else %}
+                                                <strong>Excellent</strong> filler control! ({{ session.filler_rate|floatformat:1 }}/min). You're using minimal fillers, which makes your speech clearer and more professional.
+                                            {% endif %}
+                                        </p>
+                                        <p class="text-sm font-semibold text-gray-900 mb-2">How to Improve:</p>
+                                        <ul class="text-xs text-gray-700 space-y-1 list-disc list-inside">
+                                            {% if session.filler_rate > 5 %}
+                                                <li><strong>Practice awareness:</strong> Record yourself and count every "um", "uh", "like"</li>
+                                                <li><strong>Use pauses instead:</strong> Replace fillers with intentional 1-2 second pauses</li>
+                                                <li><strong>Practice structured speech:</strong> Prepare talking points to reduce hesitation</li>
+                                                <li><strong>Slow down slightly:</strong> Rushing increases filler usage</li>
+                                            {% elif session.filler_rate > 3 %}
+                                                <li><strong>Maintain awareness:</strong> Continue monitoring your filler usage</li>
+                                                <li><strong>Practice pausing:</strong> Replace fillers with brief, intentional pauses</li>
+                                                <li><strong>Record regularly:</strong> Track your progress over time</li>
+                                            {% else %}
+                                                <li><strong>Keep it up!</strong> Your minimal filler usage is excellent</li>
+                                                <li><strong>Continue practicing</strong> to maintain this standard</li>
+                                            {% endif %}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                                          <!-- Pronunciation Quality -->
+                      {% if display_clarity_score or session.confidence_score %}
+                      {% with clarity_score_to_use=display_clarity_score|default:session.confidence_score %}
+                      <div class="mb-6">
+                          <h4 class="text-sm font-semibold text-gray-700 mb-3">Speech Clarity</h4>
+                          <div class="bg-green-50 rounded-lg p-4">
+                              <div class="flex items-center justify-between mb-4">
+                                  <div>
+                                      <p class="text-xs text-gray-600">Clarity Score</p>
+                                      <p class="text-2xl font-bold text-green-700">
+                                          {{ clarity_score_to_use|mul:100|floatformat:0 }}%
+                                      </p>
+                                  </div>
+                                  <div>
+                                      <i class="fas fa-{% if clarity_score_to_use > 0.8 %}check-circle text-green-500{% elif clarity_score_to_use > 0.6 %}exclamation-circle text-yellow-500{% else %}times-circle text-red-500{% endif %} text-3xl"></i>
+                                  </div>
+                              </div>
+
+                              <!-- Actionable Advice -->
+                              <div class="bg-white rounded-lg p-4 border-l-4 {% if clarity_score_to_use > 0.8 %}border-green-500{% elif clarity_score_to_use > 0.6 %}border-yellow-500{% else %}border-red-500{% endif %}">
+                                  <div class="flex items-start">
+                                      <i class="fas fa-info-circle text-green-600 mr-2 mt-1"></i>
+                                      <div class="flex-1">
+                                          <p class="text-sm font-semibold text-gray-900 mb-2">What This Means:</p>
+                                          <p class="text-xs text-gray-700 mb-3">
+                                              {% if clarity_score_to_use > 0.8 %}
+                                                  Your speech has <strong>excellent clarity</strong> ({{ clarity_score_to_use|mul:100|floatformat:0 }}%). Your pronunciation is clear and articulate.
+                                              {% elif clarity_score_to_use > 0.6 %}
+                                                  Your speech has <strong>good clarity</strong> ({{ clarity_score_to_use|mul:100|floatformat:0 }}%) with room for improvement. Focus on enunciation.
+                                              {% else %}
+                                                  Your speech clarity <strong>needs improvement</strong> ({{ clarity_score_to_use|mul:100|floatformat:0 }}%). Work on pronunciation and articulation.
+                                              {% endif %}
+                                          </p>
+                                        <p class="text-sm font-semibold text-gray-900 mb-2">How to Improve:</p>
+                                                                                  <ul class="text-xs text-gray-700 space-y-1 list-disc list-inside">
+                                              {% if clarity_score_to_use > 0.8 %}
+                                                  <li><strong>Excellent work!</strong> Maintain your clear articulation</li>
+                                                  <li><strong>Continue practicing</strong> to ensure consistency</li>
+                                              {% elif clarity_score_to_use > 0.6 %}
+                                                  <li><strong>Practice enunciation:</strong> Over-articulate words to build muscle memory</li>
+                                                  <li><strong>Slow down:</strong> Speaking too fast can reduce clarity</li>
+                                                  <li><strong>Record yourself:</strong> Compare your pronunciation to native speakers</li>
+                                              {% else %}
+                                                  <li><strong>Focus on articulation:</strong> Practice moving your mouth and tongue more deliberately</li>
+                                                  <li><strong>Practice tongue twisters:</strong> Build muscle memory for clear speech</li>
+                                                  <li><strong>Record and compare:</strong> Listen back and identify unclear words</li>
+                                                  <li><strong>Work on vowel clarity:</strong> Fully form vowel sounds</li>
+                                              {% endif %}
+                                          </ul>
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                      {% endwith %}
+                      {% endif %}
+                    
+                    <!-- Detailed In-Depth Feedback -->
+                    {% if detailed_feedback %}
+                    <div class="mb-6">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-3">📊 Detailed Analysis</h4>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="prose prose-sm max-w-none text-gray-700">
+                                {{ detailed_feedback|linebreaks }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Recommended Micro-Drill (Prominent Display) -->
+                    {% if recommended_drill %}
+                    <div class="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg p-6 border-2 border-purple-400 shadow-lg mb-6">
+                        <div class="flex items-start mb-4">
+                            <div class="flex-shrink-0 bg-purple-600 rounded-full p-3">
+                                <i class="fas fa-graduation-cap text-white text-2xl"></i>
+                            </div>
+                            <div class="ml-4 flex-1">
+                                <h4 class="text-xl font-bold text-gray-900 mb-1">🎯 Your Recommended Practice Drill</h4>
+                                <p class="text-sm text-gray-700 mb-4">
+                                    Based on your analysis, we've selected a targeted drill to address your specific speech patterns.
+                                </p>
+                                
+                                <!-- Drill Card -->
+                                <div class="bg-white rounded-lg p-5 shadow-md mb-4 border-l-4 border-purple-600">
+                                    <div class="flex items-start justify-between mb-3">
+                                        <div class="flex-1">
+                                            <h5 class="text-lg font-bold text-gray-900 mb-2">{{ recommended_drill.name }}</h5>
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                                {% if recommended_drill.skill_type == 'filler_words' %}bg-yellow-100 text-yellow-800
+                                                {% elif recommended_drill.skill_type == 'pronunciation' %}bg-green-100 text-green-800
+                                                {% else %}bg-blue-100 text-blue-800{% endif %}">
+                                                {{ recommended_drill.get_skill_type_display }}
+                                            </span>
+                                        </div>
+                                        {% if recommended_drill.cause %}
+                                        <span class="text-xs text-gray-500">{{ recommended_drill.get_cause_display }}</span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="prose prose-sm max-w-none text-gray-700 mb-4">
+                                        <p class="text-sm leading-relaxed">{{ recommended_drill.description }}</p>
+                                    </div>
+                                    
+                                    <!-- Quick Start Instructions -->
+                                    {% if recommended_drill.interactive_elements %}
+                                    <div class="bg-gray-50 rounded-lg p-3 mb-4">
+                                        <p class="text-xs font-semibold text-gray-900 mb-2">📋 Quick Start:</p>
+                                        <ul class="text-xs text-gray-700 space-y-1 list-disc list-inside">
+                                            {% if recommended_drill.interactive_elements.timer_duration %}
+                                            <li>Duration: {{ recommended_drill.interactive_elements.timer_duration }} seconds per round</li>
+                                            {% endif %}
+                                            {% if recommended_drill.interactive_elements.prompts %}
+                                            <li>Follow the prompts to practice targeted improvements</li>
+                                            {% else %}
+                                            <li>Follow the drill instructions to practice</li>
+                                            {% endif %}
+                                        </ul>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <!-- Action Buttons -->
+                                    <div class="flex flex-col sm:flex-row gap-3">
+                                        <a href="{% url 'coach:drill_detail' recommended_drill.pk %}" 
+                                           class="flex-1 inline-flex items-center justify-center px-6 py-3 bg-purple-600 text-white text-base font-semibold rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 shadow-md transition-all hover:shadow-lg">
+                                            <i class="fas fa-play mr-2"></i>
+                                            Start Practice Now
+                                        </a>
+                                        <a href="{% url 'coach:drills_list' %}" 
+                                           class="inline-flex items-center justify-center px-4 py-3 border-2 border-purple-600 text-purple-700 text-base font-medium rounded-lg hover:bg-purple-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+                                            <i class="fas fa-list mr-2"></i>
+                                            Browse All Drills
+                                        </a>
+                                    </div>
+                                </div>
+                                
+                                <!-- Why This Drill -->
+                                <div class="bg-indigo-50 rounded-lg p-4 border-l-4 border-indigo-400">
+                                    <div class="flex items-start">
+                                        <i class="fas fa-lightbulb text-indigo-600 mr-2 mt-1"></i>
+                                        <div class="flex-1">
+                                            <p class="text-xs font-semibold text-indigo-900 mb-1">Why This Drill?</p>
+                                            <p class="text-xs text-indigo-800">
+                                                {% if drill_reason %}
+                                                    {{ drill_reason }}
+                                                {% elif ensemble_scores %}
+                                                    {% if ensemble_scores.filler > 0.6 %}
+                                                        This drill targets your filler word usage ({{ ensemble_scores.filler|mul:100|floatformat:0 }}% score).
+                                                    {% elif ensemble_scores.clarity > 0.6 %}
+                                                        This drill improves your speech clarity ({{ ensemble_scores.clarity|mul:100|floatformat:0 }}% score).
+                                                    {% elif ensemble_scores.pacing > 0.6 %}
+                                                        This drill helps with your pacing issues ({{ ensemble_scores.pacing|mul:100|floatformat:0 }}% score).
+                                                    {% else %}
+                                                        This drill will help you maintain and improve your current performance.
+                                                    {% endif %}
+                                                {% else %}
+                                                    This drill addresses the main areas for improvement identified in your speech analysis.
+                                                {% endif %}
+                                                Practice regularly for best results!
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <!-- No Drill Available -->
+                    <div class="bg-gray-50 rounded-lg p-4 border-l-4 border-gray-400 mb-6">
+                        <div class="flex items-start">
+                            <i class="fas fa-info-circle text-gray-600 mr-2 mt-1"></i>
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold text-gray-900 mb-1">No Recommended Drill</p>
+                                <p class="text-xs text-gray-700">
+                                    A recommended drill couldn't be generated. 
+                                    <a href="{% url 'coach:drills_list' %}" class="text-indigo-600 hover:text-indigo-800 font-medium">
+                                        Browse available drills
+                                    </a> to find one that fits your needs.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="lg:col-span-1">
+            <!-- Quick Stats -->
+            <div class="bg-white shadow rounded-lg mb-8">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Session Statistics</h3>
+                    <dl class="space-y-4">
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Duration</dt>
+                            <dd class="mt-1 text-2xl font-semibold text-gray-900">
+                                {{ session.duration_minutes }}
+                                <span class="text-sm font-normal text-gray-500">minutes</span>
+                            </dd>
+                        </div>
+                        
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Filler Words</dt>
+                            <dd class="mt-1 text-2xl font-semibold text-gray-900">
+                                {{ session.filler_count }}
+                                {% if session.status == 'analyzed' %}
+                                <span class="text-sm font-normal text-gray-500">
+                                    ({{ session.filler_rate|floatformat:1 }}/min)
+                                </span>
+                                {% endif %}
+                            </dd>
+                        </div>
+                        
+                        {% if session.confidence_score %}
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Analysis Confidence</dt>
+                            <dd class="mt-1">
+                                <div class="flex items-center">
+                                    <div class="flex-1">
+                                        <div class="bg-gray-200 rounded-full h-2">
+                                            <div class="bg-green-600 h-2 rounded-full" 
+                                                 style="width: {{ session.confidence_score|floatformat:0 }}%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="ml-3 text-sm font-medium text-gray-900">
+                                        {{ session.confidence_score|floatformat:0 }}%
+                                    </div>
+                                </div>
+                            </dd>
+                        </div>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Session Metadata -->
+            <div class="bg-white shadow rounded-lg mb-8">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Session Details</h3>
+                    <dl class="space-y-3">
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Created</dt>
+                            <dd class="mt-1 text-sm text-gray-900">
+                                {{ session.created_at|date:"F j, Y \a\t g:i A" }}
+                            </dd>
+                        </div>
+                        
+                        {% if session.updated_at != session.created_at %}
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Last Updated</dt>
+                            <dd class="mt-1 text-sm text-gray-900">
+                                {{ session.updated_at|date:"F j, Y \a\t g:i A" }}
+                            </dd>
+                        </div>
+                        {% endif %}
+                        
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Session ID</dt>
+                            <dd class="mt-1 text-sm text-gray-900 font-mono">
+                                #{{ session.id }}
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Actions</h3>
+                    <div class="space-y-3">
+                        {% if session.status == 'pending' and session.audio_file %}
+                        <button onclick="analyzeSession({{ session.id }})" 
+                                id="analyzeBtn"
+                                class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            <i class="fas fa-brain mr-2"></i>Analyze with NLP
+                        </button>
+                        {% elif session.status == 'analyzed' %}
+                        <button onclick="analyzeSession({{ session.id }})" 
+                                id="analyzeBtn"
+                                class="w-full inline-flex justify-center items-center px-4 py-2 border border-indigo-300 text-sm font-medium rounded-md text-indigo-700 bg-white hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <i class="fas fa-redo mr-2"></i>Re-analyze with NLP
+                        </button>
+                        {% endif %}
+                        
+                        <a href="{% url 'speech_sessions:session_update' session.pk %}" 
+                           class="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <i class="fas fa-edit mr-2"></i>Edit Session
+                        </a>
+                        
+                        {% if session.audio_file %}
+                        <a href="{{ session.audio_file.url }}" download
+                           class="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <i class="fas fa-download mr-2"></i>Download Audio
+                        </a>
+                        {% endif %}
+                        
+                        <button onclick="shareSession()" 
+                                class="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <i class="fas fa-share mr-2"></i>Share Results
+                        </button>
+                        
+                        <a href="{% url 'speech_sessions:session_delete' session.pk %}" 
+                           class="w-full inline-flex justify-center items-center px-4 py-2 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                            <i class="fas fa-trash mr-2"></i>Delete Session
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function shareSession() {
+    if (navigator.share) {
+        navigator.share({
+            title: 'My Speech Session Results',
+            text: 'Check out my speech analysis results from Verbal Coach!',
+            url: window.location.href
+        });
+    } else {
+        // Fallback - copy URL to clipboard
+        navigator.clipboard.writeText(window.location.href).then(function() {
+            alert('Session URL copied to clipboard!');
+        }, function() {
+            alert('Unable to copy URL. Please copy it manually from the address bar.');
+        });
+    }
+}
+
+// NLP Analysis Function
+async function analyzeSession(sessionId) {
+    const btn = document.getElementById('analyzeBtn');
+    const originalHTML = btn.innerHTML;
+    
+    // Show loading state
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Analyzing...';
+    
+    try {
+        // Get CSRF token from cookies
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        const csrftoken = getCookie('csrftoken');
+        if (!csrftoken) {
+            throw new Error('CSRF token not found. Please refresh the page and try again.');
+        }
+        
+        const response = await fetch(`/speech-sessions/api/sessions/${sessionId}/analyze_with_nlp/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'  // Important: Send cookies for session auth
+        });
+        
+        // Check if response is OK
+        if (!response.ok) {
+            const text = await response.text();
+            console.error('Response error:', response.status, text);
+            throw new Error(`Server error (${response.status}): ${text.substring(0, 200)}`);
+        }
+        
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            console.error('Non-JSON response:', text.substring(0, 500));
+            throw new Error('Server returned HTML instead of JSON. This usually means authentication failed or the endpoint doesn\'t exist.');
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Show success message
+            alert('Analysis complete! Reloading page to show results...');
+            window.location.reload();
+        } else {
+            alert('Analysis failed: ' + (data.error || 'Unknown error'));
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+        }
+    } catch (error) {
+        console.error('Analysis error:', error);
+        alert('Analysis failed: ' + error.message + '\n\nCheck browser console (F12) for details.');
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+    }
+}
+
+// Auto-play audio if user clicks on a timestamp (future feature)
+document.addEventListener('DOMContentLoaded', function() {
+    const audio = document.querySelector('audio');
+    if (audio) {
+        audio.addEventListener('loadedmetadata', function() {
+            console.log('Audio duration:', audio.duration);
+        });
+    }
+});
+</script>
+{% endblock %}
+

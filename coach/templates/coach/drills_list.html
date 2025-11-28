@@ -1,0 +1,210 @@
+{% extends 'coach/base.html' %}
+
+{% block title %}Practice Drills - Verbal Coach{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Practice Drills</h1>
+                    <p class="text-gray-600 mt-2">Improve your speaking skills with interactive exercises</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-green-600">{{ total_drills }}</div>
+                    <div class="text-sm text-gray-500">Available Drills</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Skill Type Sections -->
+    {% for skill_type, drills in drills_by_type.items %}
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <div class="flex items-center mb-6">
+                <div class="flex-shrink-0">
+                    {% if skill_type == 'Pronunciation' %}
+                        <i class="fas fa-volume-up text-3xl text-blue-600"></i>
+                    {% elif skill_type == 'Filler Words' %}
+                        <i class="fas fa-comments text-3xl text-red-600"></i>
+                    {% elif skill_type == 'Pacing' %}
+                        <i class="fas fa-tachometer-alt text-3xl text-yellow-600"></i>
+                    {% else %}
+                        <i class="fas fa-dumbbell text-3xl text-gray-600"></i>
+                    {% endif %}
+                </div>
+                <div class="ml-4">
+                    <h2 class="text-2xl font-bold text-gray-900">{{ skill_type }}</h2>
+                    <p class="text-gray-600">
+                        {% if skill_type == 'Pronunciation' %}
+                            Master clear articulation and proper pronunciation
+                        {% elif skill_type == 'Filler Words' %}
+                            Eliminate "um", "uh", and other filler words
+                        {% elif skill_type == 'Pacing' %}
+                            Control your speaking speed and rhythm
+                        {% else %}
+                            General speaking improvement exercises
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Drills Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for drill in drills %}
+                <div class="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all duration-200 hover:border-green-300">
+                    <div class="flex items-start justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">{{ drill.name }}</h3>
+                        {% if drill.cause %}
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            {{ drill.get_cause_display }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    <p class="text-gray-600 mb-4 text-sm leading-relaxed">{{ drill.description }}</p>
+                    
+                    <!-- Interactive Elements Preview -->
+                    {% if drill.interactive_elements %}
+                    <div class="mb-4">
+                        <div class="flex flex-wrap gap-2">
+                            {% if drill.interactive_elements.audio_features %}
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    <i class="fas fa-microphone mr-1"></i>Audio Recording
+                                </span>
+                            {% endif %}
+                            {% if drill.interactive_elements.webcam_mirror %}
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                    <i class="fas fa-video mr-1"></i>Webcam Mirror
+                                </span>
+                            {% endif %}
+                            {% if drill.interactive_elements.spinning_wheel %}
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                    <i class="fas fa-circle-notch mr-1"></i>Spinning Wheel
+                                </span>
+                            {% endif %}
+                            {% if drill.interactive_elements.drag_drop %}
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <i class="fas fa-hand-paper mr-1"></i>Drag & Drop
+                                </span>
+                            {% endif %}
+                            {% if drill.interactive_elements.waveform_comparison %}
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                    <i class="fas fa-chart-line mr-1"></i>Waveform
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Duration -->
+                    {% if drill.interactive_elements.timer_duration %}
+                    <div class="mb-4">
+                        <span class="text-sm text-gray-500">
+                            <i class="fas fa-clock mr-1"></i>
+                            {{ drill.interactive_elements.timer_duration|floatformat:0 }} seconds
+                        </span>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex space-x-3">
+                        <a href="{% url 'coach:drill_detail' drill.id %}" 
+                           class="flex-1 bg-green-600 hover:bg-green-700 text-white text-center px-4 py-2 rounded-lg font-medium transition-colors">
+                            <i class="fas fa-play mr-2"></i>Start Drill
+                        </a>
+                        <button onclick="showDrillInfo({{ drill.id }})" 
+                                class="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-info-circle"></i>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- Quick Access to Specific Drills -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Access</h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <a href="{% url 'coach:drill_poem_echo' %}" class="text-center p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors">
+                    <i class="fas fa-book text-2xl text-blue-600 mb-2"></i>
+                    <div class="text-sm font-medium text-gray-900">Poem Echo</div>
+                </a>
+                <a href="{% url 'coach:drill_vowel_vortex' %}" class="text-center p-4 border border-gray-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition-colors">
+                    <i class="fas fa-circle-notch text-2xl text-purple-600 mb-2"></i>
+                    <div class="text-sm font-medium text-gray-900">Vowel Vortex</div>
+                </a>
+                <a href="{% url 'coach:drill_mirror_mimic' %}" class="text-center p-4 border border-gray-200 rounded-lg hover:bg-orange-50 hover:border-orange-300 transition-colors">
+                    <i class="fas fa-video text-2xl text-orange-600 mb-2"></i>
+                    <div class="text-sm font-medium text-gray-900">Mirror Mimic</div>
+                </a>
+                <a href="{% url 'coach:drill_phonetic_puzzle' %}" class="text-center p-4 border border-gray-200 rounded-lg hover:bg-green-50 hover:border-green-300 transition-colors">
+                    <i class="fas fa-puzzle-piece text-2xl text-green-600 mb-2"></i>
+                    <div class="text-sm font-medium text-gray-900">Phonetic Puzzle</div>
+                </a>
+                <a href="{% url 'coach:drill_shadow_superhero' %}" class="text-center p-4 border border-gray-200 rounded-lg hover:bg-indigo-50 hover:border-indigo-300 transition-colors">
+                    <i class="fas fa-chart-line text-2xl text-indigo-600 mb-2"></i>
+                    <div class="text-sm font-medium text-gray-900">Shadow Superhero</div>
+                </a>
+                <a href="{% url 'coach:drill_pencil_precision' %}" class="text-center p-4 border border-gray-200 rounded-lg hover:bg-yellow-50 hover:border-yellow-300 transition-colors">
+                    <i class="fas fa-pencil-alt text-2xl text-yellow-600 mb-2"></i>
+                    <div class="text-sm font-medium text-gray-900">Pencil Precision</div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Drill Info Modal -->
+<div id="drill-info-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg max-w-md w-full p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Drill Information</h3>
+                <button onclick="hideDrillInfo()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="drill-info-content">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showDrillInfo(drillId) {
+    // This would typically fetch drill details via AJAX
+    // For now, we'll show a placeholder
+    document.getElementById('drill-info-content').innerHTML = `
+        <p class="text-gray-600">Detailed information about this drill will be displayed here.</p>
+        <div class="mt-4">
+            <a href="/drill/${drillId}/" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium">
+                Start This Drill
+            </a>
+        </div>
+    `;
+    document.getElementById('drill-info-modal').classList.remove('hidden');
+}
+
+function hideDrillInfo() {
+    document.getElementById('drill-info-modal').classList.add('hidden');
+}
+
+// Close modal when clicking outside
+document.getElementById('drill-info-modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        hideDrillInfo();
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,114 @@
+{% extends 'coach/base.html' %}
+
+{% block title %}Backup Codes - Verbal Coach{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-2xl w-full space-y-8">
+        <div class="text-center">
+            <div class="mx-auto h-12 w-12 text-green-600">
+                <i class="fas fa-check-circle text-4xl"></i>
+            </div>
+            <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
+                2FA Enabled Successfully!
+            </h2>
+            <p class="mt-2 text-sm text-gray-600">
+                Your account is now protected with two-factor authentication
+            </p>
+        </div>
+        
+        <div class="bg-white shadow rounded-lg p-6">
+            <div class="mb-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">
+                    <i class="fas fa-key text-yellow-600 mr-2"></i>
+                    Save Your Backup Codes
+                </h3>
+                <p class="text-sm text-gray-600">
+                    Store these backup codes in a safe place. You can use them to access your account if you lose your authenticator device.
+                </p>
+            </div>
+            
+            <div class="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-6 mb-6">
+                <div class="grid grid-cols-2 gap-4">
+                    {% for code in backup_codes %}
+                    <div class="bg-white p-3 rounded border border-gray-200">
+                        <code class="text-lg font-mono text-gray-900">{{ code }}</code>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="mt-4 flex justify-center space-x-4">
+                    <button onclick="copyBackupCodes()" 
+                            class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <i class="fas fa-copy mr-2"></i>
+                        Copy Codes
+                    </button>
+                    
+                    <button onclick="printBackupCodes()" 
+                            class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <i class="fas fa-print mr-2"></i>
+                        Print Codes
+                    </button>
+                </div>
+            </div>
+            
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-red-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-red-800">Important</h3>
+                        <ul class="mt-2 text-sm text-red-700 list-disc list-inside space-y-1">
+                            <li>Each backup code can only be used once</li>
+                            <li>Keep these codes in a secure location</li>
+                            <li>Don't share these codes with anyone</li>
+                            <li>You won't be able to see these codes again</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center">
+                <a href="{% url 'coach:security_settings' %}" 
+                   class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-shield-alt mr-2"></i>
+                    Go to Security Settings
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyBackupCodes() {
+    const codes = [
+        {% for code in backup_codes %}
+        "{{ code }}"{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+    
+    const text = codes.join('\n');
+    
+    navigator.clipboard.writeText(text).then(function() {
+        alert('Backup codes copied to clipboard!');
+    }, function(err) {
+        console.error('Could not copy text: ', err);
+        alert('Failed to copy codes. Please copy them manually.');
+    });
+}
+
+function printBackupCodes() {
+    window.print();
+}
+</script>
+
+<style>
+@media print {
+    .no-print {
+        display: none !important;
+    }
+}
+</style>
+{% endblock %}
+

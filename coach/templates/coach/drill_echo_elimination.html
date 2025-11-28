@@ -1,0 +1,506 @@
+{% extends 'coach/drill_unified_base.html' %}
+{% load static %}
+
+{% block drill_content %}
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="text-center">
+        <h2 class="text-3xl font-bold text-gray-800 mb-4">Echo Elimination Echo</h2>
+        <p class="text-lg text-gray-600 mb-6">Listen to your cleaned echo and repeat it without filler words!</p>
+    </div>
+
+    <!-- Echo Processing -->
+    <div class="bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Echo Processing</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Original Recording -->
+            <div class="bg-white rounded-lg p-4">
+                <h4 class="font-semibold text-gray-700 mb-3">Original Recording</h4>
+                <div class="mb-4">
+                    <audio controls class="w-full" id="original-audio">
+                        <source src="" type="audio/wav">
+                    </audio>
+                </div>
+                <div class="text-center">
+                    <button onclick="playOriginal()" 
+                            class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold">
+                        🔊 Play Original
+                    </button>
+                </div>
+                
+                <!-- Filler Analysis -->
+                <div class="mt-4">
+                    <h5 class="font-semibold text-gray-700 mb-2">Detected Fillers</h5>
+                    <div id="original-fillers" class="space-y-1">
+                        <!-- Detected fillers will be shown here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Cleaned Echo -->
+            <div class="bg-white rounded-lg p-4">
+                <h4 class="font-semibold text-gray-700 mb-3">Cleaned Echo</h4>
+                <div class="mb-4">
+                    <audio controls class="w-full" id="cleaned-audio">
+                        <source src="" type="audio/wav">
+                    </audio>
+                </div>
+                <div class="text-center">
+                    <button onclick="playCleaned()" 
+                            class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold">
+                        🔊 Play Cleaned
+                    </button>
+                </div>
+                
+                <!-- Echo Controls -->
+                <div class="mt-4 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm text-gray-600">Playback Speed</label>
+                        <span id="playback-speed" class="text-sm font-semibold text-gray-800">1.0x</span>
+                    </div>
+                    <input type="range" id="speed-slider" min="0.5" max="1.5" step="0.1" value="1.0" 
+                           class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                           oninput="updatePlaybackSpeed(this.value)">
+                    
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm text-gray-600">Echo Delay</label>
+                        <span id="echo-delay" class="text-sm font-semibold text-gray-800">0.5s</span>
+                    </div>
+                    <input type="range" id="delay-slider" min="0.1" max="2.0" step="0.1" value="0.5" 
+                           class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                           oninput="updateEchoDelay(this.value)">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recording Section -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Echo Recording</h3>
+        
+        <div class="text-center">
+            <button id="record-btn" onclick="startEchoRecording()" 
+                    class="px-8 py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold text-lg transition-colors">
+                🎤 Start Echo Recording
+            </button>
+            <div id="recording-status" class="mt-4 text-lg font-semibold text-gray-600">Ready to create your echo!</div>
+        </div>
+        
+        <!-- Recording Instructions -->
+        <div class="mt-6 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-4">
+            <h4 class="font-semibold text-gray-700 mb-2">Recording Instructions</h4>
+            <ol class="text-sm text-gray-600 space-y-1">
+                <li>1. Record your speech (it will be processed to remove fillers)</li>
+                <li>2. Listen to the cleaned echo</li>
+                <li>3. Repeat the cleaned version without filler words</li>
+                <li>4. Compare your repetition with the original</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- Echo Challenge -->
+    <div class="bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Echo Challenge</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Challenge Phase -->
+            <div class="bg-white rounded-lg p-4">
+                <h4 class="font-semibold text-gray-700 mb-3">Challenge Phase</h4>
+                <div id="challenge-phase" class="text-lg text-gray-600 mb-4">Record your speech first</div>
+                
+                <div class="space-y-3">
+                    <button onclick="startPhase('listen')" 
+                            class="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold">
+                        👂 Listen to Cleaned Echo
+                    </button>
+                    <button onclick="startPhase('repeat')" 
+                            class="w-full px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold">
+                        🎤 Repeat Cleaned Version
+                    </button>
+                    <button onclick="startPhase('compare')" 
+                            class="w-full px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold">
+                        🔍 Compare Results
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Similarity Analysis -->
+            <div class="bg-white rounded-lg p-4">
+                <h4 class="font-semibold text-gray-700 mb-3">Similarity Analysis</h4>
+                
+                <div class="space-y-4">
+                    <div class="text-center">
+                        <div class="text-sm text-gray-600">Overall Similarity</div>
+                        <div id="similarity-score" class="text-3xl font-bold text-blue-600">0%</div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span>Filler Elimination</span>
+                            <span id="filler-elimination">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div id="filler-elimination-bar" class="bg-red-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span>Speech Flow</span>
+                            <span id="speech-flow">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div id="speech-flow-bar" class="bg-green-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span>Confidence Level</span>
+                            <span id="confidence-level">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div id="confidence-level-bar" class="bg-purple-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio Players -->
+    <div id="audio-players" class="bg-white rounded-lg shadow-lg p-6 hidden">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Audio Comparison</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Original -->
+            <div class="bg-red-50 rounded-lg p-4">
+                <h4 class="font-semibold text-red-700 mb-3">Original (With Fillers)</h4>
+                <audio controls class="w-full" id="original-comparison">
+                    <source src="" type="audio/wav">
+                </audio>
+                <div class="mt-2 text-sm text-red-600">
+                    <strong>Fillers:</strong> <span id="original-filler-count">0</span>
+                </div>
+            </div>
+            
+            <!-- Cleaned Echo -->
+            <div class="bg-green-50 rounded-lg p-4">
+                <h4 class="font-semibold text-green-700 mb-3">Cleaned Echo</h4>
+                <audio controls class="w-full" id="cleaned-comparison">
+                    <source src="" type="audio/wav">
+                </audio>
+                <div class="mt-2 text-sm text-green-600">
+                    <strong>Fillers:</strong> <span id="cleaned-filler-count">0</span>
+                </div>
+            </div>
+            
+            <!-- Your Repetition -->
+            <div class="bg-blue-50 rounded-lg p-4">
+                <h4 class="font-semibold text-blue-700 mb-3">Your Repetition</h4>
+                <audio controls class="w-full" id="repetition-audio">
+                    <source src="" type="audio/wav">
+                </audio>
+                <div class="mt-2 text-sm text-blue-600">
+                    <strong>Fillers:</strong> <span id="repetition-filler-count">0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Metrics -->
+    <div class="bg-gradient-to-r from-green-100 to-blue-100 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Performance Metrics</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Echo Accuracy</div>
+                <div id="echo-accuracy" class="text-3xl font-bold text-blue-600">0%</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Filler Reduction</div>
+                <div id="filler-reduction" class="text-3xl font-bold text-red-600">0%</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Flow Improvement</div>
+                <div id="flow-improvement" class="text-3xl font-bold text-green-600">0%</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-gray-800">Overall Rating</div>
+                <div id="overall-rating" class="text-3xl font-bold text-purple-600">0/10</div>
+            </div>
+        </div>
+        
+        <!-- Improvement Suggestions -->
+        <div class="mt-6 bg-white rounded-lg p-4">
+            <h4 class="font-semibold text-gray-700 mb-2">Improvement Suggestions</h4>
+            <div id="improvement-suggestions" class="text-sm text-gray-600">
+                Complete the echo challenge to see personalized suggestions!
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback -->
+    <div id="feedback-container" class="bg-gray-50 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Echo Elimination Feedback</h3>
+        <div id="feedback-buttons"></div>
+    </div>
+</div>
+
+<script>
+// Drill-specific JavaScript
+function getDrillSpecificParams() {
+    // Override this function in individual drill templates if needed
+    return {};
+}
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/drills.js' %}"></script>
+<script>
+    let recordingActive = false;
+    let currentPhase = 'record';
+    let originalAudioUrl = '';
+    let cleanedAudioUrl = '';
+    let repetitionAudioUrl = '';
+    let playbackSpeed = 1.0;
+    let echoDelay = 0.5;
+
+    function startEchoRecording() {
+        if (recordingActive) return;
+        
+        recordingActive = true;
+        document.getElementById('record-btn').textContent = 'Recording...';
+        document.getElementById('record-btn').disabled = true;
+        document.getElementById('recording-status').textContent = 'Recording your speech for echo processing...';
+        
+        drillComponents.startMic({
+            onStart: function() {
+                console.log('Echo recording started');
+            },
+            onStop: function(audioBlob, audioUrl) {
+                recordingActive = false;
+                document.getElementById('record-btn').textContent = '🎤 Start Echo Recording';
+                document.getElementById('record-btn').disabled = false;
+                document.getElementById('recording-status').textContent = 'Recording complete! Processing echo...';
+                
+                // Store original audio
+                originalAudioUrl = audioUrl;
+                document.getElementById('original-audio').src = audioUrl;
+                document.getElementById('original-comparison').src = audioUrl;
+                
+                // Simulate echo processing
+                processEcho(audioUrl);
+                
+                // Update challenge phase
+                document.getElementById('challenge-phase').textContent = 'Echo processed! Listen to the cleaned version.';
+            },
+            onError: function(error) {
+                alert('Error accessing microphone: ' + error.message);
+                recordingActive = false;
+                document.getElementById('record-btn').textContent = '🎤 Start Echo Recording';
+                document.getElementById('record-btn').disabled = false;
+            }
+        });
+    }
+
+    function processEcho(audioUrl) {
+        // Simulate echo processing (in real implementation, this would use audio processing)
+        setTimeout(() => {
+            cleanedAudioUrl = audioUrl; // In real implementation, this would be processed audio
+            document.getElementById('cleaned-audio').src = cleanedAudioUrl;
+            document.getElementById('cleaned-comparison').src = cleanedAudioUrl;
+            
+            // Simulate filler detection
+            simulateFillerDetection();
+            
+            document.getElementById('recording-status').textContent = 'Echo processed! Ready for challenge.';
+        }, 2000);
+    }
+
+    function simulateFillerDetection() {
+        const commonFillers = ['um', 'uh', 'like', 'you know', 'so', 'well'];
+        const detectedFillers = commonFillers.filter(filler => Math.random() < 0.3);
+        
+        const container = document.getElementById('original-fillers');
+        container.innerHTML = detectedFillers.map(filler => 
+            `<div class="px-2 py-1 bg-red-200 text-red-800 rounded text-sm">${filler}</div>`
+        ).join('');
+        
+        document.getElementById('original-filler-count').textContent = detectedFillers.length;
+        document.getElementById('cleaned-filler-count').textContent = '0';
+    }
+
+    function playOriginal() {
+        const audio = document.getElementById('original-audio');
+        if (audio && audio.src) {
+            audio.play();
+        }
+    }
+
+    function playCleaned() {
+        const audio = document.getElementById('cleaned-audio');
+        if (audio && audio.src) {
+            audio.playbackRate = playbackSpeed;
+            audio.play();
+        }
+    }
+
+    function updatePlaybackSpeed(speed) {
+        playbackSpeed = parseFloat(speed);
+        document.getElementById('playback-speed').textContent = playbackSpeed.toFixed(1) + 'x';
+        
+        // Update cleaned audio playback rate
+        const audio = document.getElementById('cleaned-audio');
+        if (audio && audio.src) {
+            audio.playbackRate = playbackSpeed;
+        }
+    }
+
+    function updateEchoDelay(delay) {
+        echoDelay = parseFloat(delay);
+        document.getElementById('echo-delay').textContent = echoDelay.toFixed(1) + 's';
+    }
+
+    function startPhase(phase) {
+        switch (phase) {
+            case 'listen':
+                if (!cleanedAudioUrl) {
+                    alert('Please record your speech first!');
+                    return;
+                }
+                playCleaned();
+                document.getElementById('challenge-phase').textContent = 'Listen carefully to the cleaned echo. Notice how fillers are removed.';
+                break;
+                
+            case 'repeat':
+                if (!cleanedAudioUrl) {
+                    alert('Please record your speech first!');
+                    return;
+                }
+                startRepetitionRecording();
+                break;
+                
+            case 'compare':
+                if (!repetitionAudioUrl) {
+                    alert('Please complete the repetition phase first!');
+                    return;
+                }
+                compareResults();
+                break;
+        }
+    }
+
+    function startRepetitionRecording() {
+        if (recordingActive) return;
+        
+        recordingActive = true;
+        document.getElementById('challenge-phase').textContent = 'Now repeat the cleaned version without filler words...';
+        
+        drillComponents.startMic({
+            onStart: function() {
+                console.log('Repetition recording started');
+            },
+            onStop: function(audioBlob, audioUrl) {
+                recordingActive = false;
+                repetitionAudioUrl = audioUrl;
+                document.getElementById('repetition-audio').src = audioUrl;
+                
+                document.getElementById('challenge-phase').textContent = 'Repetition complete! Ready to compare results.';
+                
+                // Show audio players
+                document.getElementById('audio-players').classList.remove('hidden');
+                
+                // Simulate repetition analysis
+                simulateRepetitionAnalysis();
+            },
+            onError: function(error) {
+                alert('Error accessing microphone: ' + error.message);
+                recordingActive = false;
+            }
+        });
+    }
+
+    function simulateRepetitionAnalysis() {
+        // Simulate analysis of repetition
+        const repetitionFillers = Math.floor(Math.random() * 3); // 0-2 fillers
+        document.getElementById('repetition-filler-count').textContent = repetitionFillers;
+    }
+
+    function compareResults() {
+        // Simulate comparison analysis
+        const originalFillers = parseInt(document.getElementById('original-filler-count').textContent);
+        const repetitionFillers = parseInt(document.getElementById('repetition-filler-count').textContent);
+        
+        // Calculate metrics
+        const fillerElimination = originalFillers > 0 ? Math.round(((originalFillers - repetitionFillers) / originalFillers) * 100) : 100;
+        const speechFlow = Math.floor(Math.random() * 30) + 70; // 70-100%
+        const confidenceLevel = Math.floor(Math.random() * 25) + 75; // 75-100%
+        const similarityScore = Math.round((fillerElimination + speechFlow + confidenceLevel) / 3);
+        
+        // Update displays
+        document.getElementById('filler-elimination').textContent = fillerElimination + '%';
+        document.getElementById('speech-flow').textContent = speechFlow + '%';
+        document.getElementById('confidence-level').textContent = confidenceLevel + '%';
+        document.getElementById('similarity-score').textContent = similarityScore + '%';
+        
+        // Update progress bars
+        document.getElementById('filler-elimination-bar').style.width = fillerElimination + '%';
+        document.getElementById('speech-flow-bar').style.width = speechFlow + '%';
+        document.getElementById('confidence-level-bar').style.width = confidenceLevel + '%';
+        
+        // Update performance metrics
+        updatePerformanceMetrics(fillerElimination, speechFlow, confidenceLevel, similarityScore);
+        
+        // Generate improvement suggestions
+        generateImprovementSuggestions(fillerElimination, speechFlow, confidenceLevel);
+        
+        document.getElementById('challenge-phase').textContent = 'Comparison complete! Check your results below.';
+    }
+
+    function updatePerformanceMetrics(fillerElimination, speechFlow, confidenceLevel, similarityScore) {
+        const echoAccuracy = Math.round(similarityScore * 0.9); // Slightly lower than similarity
+        const fillerReduction = fillerElimination;
+        const flowImprovement = Math.max(0, speechFlow - 50); // Improvement over baseline
+        const overallRating = Math.round((echoAccuracy + fillerReduction + flowImprovement) / 30); // Scale to 10
+        
+        document.getElementById('echo-accuracy').textContent = echoAccuracy + '%';
+        document.getElementById('filler-reduction').textContent = fillerReduction + '%';
+        document.getElementById('flow-improvement').textContent = flowImprovement + '%';
+        document.getElementById('overall-rating').textContent = overallRating + '/10';
+    }
+
+    function generateImprovementSuggestions(fillerElimination, speechFlow, confidenceLevel) {
+        const suggestions = [];
+        
+        if (fillerElimination < 80) {
+            suggestions.push('• Focus more on eliminating filler words in your repetition');
+        }
+        if (speechFlow < 85) {
+            suggestions.push('• Work on maintaining smoother speech flow');
+        }
+        if (confidenceLevel < 90) {
+            suggestions.push('• Practice speaking with more confidence');
+        }
+        
+        if (suggestions.length === 0) {
+            suggestions.push('• Excellent performance! You successfully eliminated fillers and maintained good flow');
+        }
+        
+        document.getElementById('improvement-suggestions').innerHTML = suggestions.join('');
+        
+        // Show feedback buttons
+        drillComponents.showFeedback('feedback-buttons', function(rating) {
+            console.log('Echo elimination feedback:', rating);
+        });
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        updatePlaybackSpeed(1.0);
+        updateEchoDelay(0.5);
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,439 @@
+{% extends 'coach/drill_unified_base.html' %}
+{% load static %}
+
+{% block drill_content %}
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="text-center">
+        <h2 class="text-3xl font-bold text-gray-800 mb-4">Silent Switcheroo</h2>
+        <p class="text-lg text-gray-600 mb-6">Rewrite sentences to eliminate filler words and speak with confidence!</p>
+    </div>
+
+    <!-- Sentence Display -->
+    <div class="bg-gradient-to-r from-red-100 to-pink-100 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Original Sentence</h3>
+        
+        <div class="bg-white rounded-lg p-6 mb-6">
+            <div class="text-lg text-gray-700 leading-relaxed mb-4">
+                <span id="original-sentence">{{ original_sentence }}</span>
+            </div>
+            
+            <!-- Filler Word Indicators -->
+            <div class="mt-4">
+                <h4 class="font-semibold text-gray-700 mb-2">Detected Filler Words:</h4>
+                <div id="filler-indicators" class="flex flex-wrap gap-2">
+                    {% for filler in detected_fillers %}
+                    <span class="px-3 py-1 bg-red-200 text-red-800 rounded-full text-sm font-semibold">
+                        {{ filler }}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- New Sentence Button -->
+        <div class="text-center">
+            <button onclick="loadNewSentence()" 
+                    class="px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition-colors">
+                🔄 New Sentence
+            </button>
+        </div>
+    </div>
+
+    <!-- Rewrite Section -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Your Rewrite</h3>
+        
+        <div class="mb-6">
+            <label for="rewrite-textarea" class="block text-sm font-medium text-gray-700 mb-2">
+                Rewrite the sentence without filler words:
+            </label>
+            <textarea id="rewrite-textarea" rows="4" 
+                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Type your filler-free version here..."></textarea>
+        </div>
+        
+        <!-- Rewrite Tools -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <button onclick="analyzeRewrite()" 
+                    class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold">
+                🔍 Analyze Rewrite
+            </button>
+            <button onclick="getSuggestions()" 
+                    class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold">
+                💡 Get Suggestions
+            </button>
+            <button onclick="clearRewrite()" 
+                    class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-semibold">
+                🗑️ Clear
+            </button>
+        </div>
+        
+        <!-- Analysis Results -->
+        <div id="analysis-results" class="hidden bg-gray-50 rounded-lg p-4">
+            <h4 class="font-semibold text-gray-700 mb-3">Analysis Results</h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="text-center">
+                    <div class="text-sm text-gray-600">Filler Count</div>
+                    <div id="filler-count" class="text-2xl font-bold text-red-600">0</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-sm text-gray-600">Word Count</div>
+                    <div id="word-count" class="text-2xl font-bold text-blue-600">0</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-sm text-gray-600">Improvement</div>
+                    <div id="improvement" class="text-2xl font-bold text-green-600">0%</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Suggestions -->
+        <div id="suggestions" class="hidden mt-4 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
+            <h4 class="font-semibold text-yellow-800 mb-2">Suggestions:</h4>
+            <div id="suggestions-list" class="text-sm text-yellow-700"></div>
+        </div>
+    </div>
+
+    <!-- Speech Practice -->
+    <div class="bg-gradient-to-r from-green-100 to-blue-100 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Speech Practice</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Original Speech -->
+            <div class="bg-white rounded-lg p-4">
+                <h4 class="font-semibold text-gray-700 mb-3">Practice Original</h4>
+                <div class="text-gray-600 mb-4">{{ original_sentence }}</div>
+                <button onclick="recordOriginal()" 
+                        class="w-full px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold">
+                    🎤 Record Original
+                </button>
+            </div>
+            
+            <!-- Rewritten Speech -->
+            <div class="bg-white rounded-lg p-4">
+                <h4 class="font-semibold text-gray-700 mb-3">Practice Rewritten</h4>
+                <div id="rewrite-display" class="text-gray-600 mb-4">Write your rewrite first</div>
+                <button onclick="recordRewritten()" 
+                        class="w-full px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold">
+                    🎤 Record Rewritten
+                </button>
+            </div>
+        </div>
+        
+        <!-- Audio Players -->
+        <div id="audio-players" class="mt-6 hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white rounded-lg p-4">
+                    <h4 class="font-semibold text-gray-700 mb-3">Original Recording</h4>
+                    <audio controls class="w-full" id="original-audio">
+                        <source src="" type="audio/wav">
+                    </audio>
+                </div>
+                <div class="bg-white rounded-lg p-4">
+                    <h4 class="font-semibold text-gray-700 mb-3">Rewritten Recording</h4>
+                    <audio controls class="w-full" id="rewritten-audio">
+                        <source src="" type="audio/wav">
+                    </audio>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparison -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Side-by-Side Comparison</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Original -->
+            <div class="bg-red-50 rounded-lg p-4">
+                <h4 class="font-semibold text-red-700 mb-3">Original (With Fillers)</h4>
+                <div class="text-gray-700 leading-relaxed mb-4">{{ original_sentence }}</div>
+                <div class="text-sm text-red-600">
+                    <strong>Issues:</strong> Contains {{ detected_fillers|length }} filler words
+                </div>
+            </div>
+            
+            <!-- Rewritten -->
+            <div class="bg-green-50 rounded-lg p-4">
+                <h4 class="font-semibold text-green-700 mb-3">Rewritten (Filler-Free)</h4>
+                <div id="comparison-rewrite" class="text-gray-700 leading-relaxed mb-4">Write your rewrite to see comparison</div>
+                <div id="comparison-stats" class="text-sm text-green-600">
+                    <strong>Improvements:</strong> Waiting for rewrite...
+                </div>
+            </div>
+        </div>
+        
+        <!-- Improvement Metrics -->
+        <div class="mt-6 bg-gray-50 rounded-lg p-4">
+            <h4 class="font-semibold text-gray-700 mb-3">Improvement Metrics</h4>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="text-center">
+                    <div class="text-sm text-gray-600">Filler Reduction</div>
+                    <div id="filler-reduction" class="text-2xl font-bold text-red-600">0%</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-sm text-gray-600">Clarity Score</div>
+                    <div id="clarity-score" class="text-2xl font-bold text-blue-600">0</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-sm text-gray-600">Confidence Boost</div>
+                    <div id="confidence-boost" class="text-2xl font-bold text-green-600">0%</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-sm text-gray-600">Overall Rating</div>
+                    <div id="overall-rating" class="text-2xl font-bold text-purple-600">0/10</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tips and Strategies -->
+    <div class="bg-gradient-to-r from-purple-100 to-indigo-100 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Filler Elimination Strategies</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white rounded-lg p-4">
+                <h4 class="font-semibold text-gray-700 mb-3">Common Filler Words</h4>
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                    <div class="px-2 py-1 bg-red-100 text-red-800 rounded">um</div>
+                    <div class="px-2 py-1 bg-red-100 text-red-800 rounded">uh</div>
+                    <div class="px-2 py-1 bg-red-100 text-red-800 rounded">like</div>
+                    <div class="px-2 py-1 bg-red-100 text-red-800 rounded">you know</div>
+                    <div class="px-2 py-1 bg-red-100 text-red-800 rounded">so</div>
+                    <div class="px-2 py-1 bg-red-100 text-red-800 rounded">well</div>
+                    <div class="px-2 py-1 bg-red-100 text-red-800 rounded">actually</div>
+                    <div class="px-2 py-1 bg-red-100 text-red-800 rounded">basically</div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg p-4">
+                <h4 class="font-semibold text-gray-700 mb-3">Replacement Strategies</h4>
+                <ul class="text-sm text-gray-600 space-y-1">
+                    <li>• Replace "um" with a brief pause</li>
+                    <li>• Use "I think" instead of "like"</li>
+                    <li>• Say "in other words" instead of "you know"</li>
+                    <li>• Use "therefore" instead of "so"</li>
+                    <li>• Replace "well" with "let me think"</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback -->
+    <div id="feedback-container" class="bg-gray-50 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Switcheroo Feedback</h3>
+        <div id="feedback-buttons"></div>
+    </div>
+</div>
+
+<script>
+// Drill-specific JavaScript
+function getDrillSpecificParams() {
+    // Override this function in individual drill templates if needed
+    return {};
+}
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/drills.js' %}"></script>
+<script>
+    let originalSentence = "{{ original_sentence|escapejs }}";
+    let detectedFillers = {{ detected_fillers|safe }};
+    let recordingActive = false;
+
+    function loadNewSentence() {
+        // Simulate loading new sentence
+        const newSentences = [
+            "Um, I think, like, it's really great and, you know, we should, so, basically do this.",
+            "Well, actually, I'm not sure if, like, this is the right way to, um, approach this problem.",
+            "So, you know, the thing is that, like, we need to, um, figure out how to, well, solve this.",
+            "Basically, I think that, like, the solution is, you know, to just, um, try harder and, so, be more focused."
+        ];
+        
+        const randomSentence = newSentences[Math.floor(Math.random() * newSentences.length)];
+        originalSentence = randomSentence;
+        
+        // Update display
+        document.getElementById('original-sentence').textContent = randomSentence;
+        
+        // Simulate filler detection
+        const commonFillers = ['um', 'uh', 'like', 'you know', 'so', 'well', 'actually', 'basically'];
+        detectedFillers = commonFillers.filter(filler => 
+            randomSentence.toLowerCase().includes(filler)
+        );
+        
+        // Update filler indicators
+        updateFillerIndicators();
+        
+        // Clear rewrite
+        clearRewrite();
+    }
+
+    function updateFillerIndicators() {
+        const container = document.getElementById('filler-indicators');
+        container.innerHTML = detectedFillers.map(filler => 
+            `<span class="px-3 py-1 bg-red-200 text-red-800 rounded-full text-sm font-semibold">${filler}</span>`
+        ).join('');
+    }
+
+    function analyzeRewrite() {
+        const rewrite = document.getElementById('rewrite-textarea').value.trim();
+        if (!rewrite) {
+            alert('Please write your rewrite first!');
+            return;
+        }
+        
+        // Simulate filler detection in rewrite
+        const commonFillers = ['um', 'uh', 'like', 'you know', 'so', 'well', 'actually', 'basically'];
+        const rewriteFillers = commonFillers.filter(filler => 
+            rewrite.toLowerCase().includes(filler)
+        );
+        
+        const fillerCount = rewriteFillers.length;
+        const wordCount = rewrite.split(/\s+/).length;
+        const originalWordCount = originalSentence.split(/\s+/).length;
+        const improvement = Math.round(((detectedFillers.length - fillerCount) / detectedFillers.length) * 100);
+        
+        // Update displays
+        document.getElementById('filler-count').textContent = fillerCount;
+        document.getElementById('word-count').textContent = wordCount;
+        document.getElementById('improvement').textContent = improvement + '%';
+        
+        // Show analysis results
+        document.getElementById('analysis-results').classList.remove('hidden');
+        
+        // Update comparison
+        updateComparison(rewrite, fillerCount, improvement);
+    }
+
+    function updateComparison(rewrite, fillerCount, improvement) {
+        document.getElementById('comparison-rewrite').textContent = rewrite;
+        document.getElementById('comparison-stats').innerHTML = 
+            `<strong>Improvements:</strong> Reduced fillers by ${improvement}%, ${fillerCount} fillers remaining`;
+        
+        // Update metrics
+        const fillerReduction = Math.round(((detectedFillers.length - fillerCount) / detectedFillers.length) * 100);
+        const clarityScore = Math.max(0, 100 - (fillerCount * 20));
+        const confidenceBoost = Math.round(improvement * 0.8);
+        const overallRating = Math.round((clarityScore + confidenceBoost) / 20);
+        
+        document.getElementById('filler-reduction').textContent = fillerReduction + '%';
+        document.getElementById('clarity-score').textContent = clarityScore;
+        document.getElementById('confidence-boost').textContent = confidenceBoost + '%';
+        document.getElementById('overall-rating').textContent = overallRating + '/10';
+    }
+
+    function getSuggestions() {
+        const rewrite = document.getElementById('rewrite-textarea').value.trim();
+        if (!rewrite) {
+            alert('Please write your rewrite first!');
+            return;
+        }
+        
+        const suggestions = [
+            "Try replacing 'um' with a brief pause",
+            "Consider using 'I think' instead of 'like'",
+            "Replace 'you know' with 'in other words'",
+            "Use 'therefore' instead of 'so'",
+            "Replace 'well' with 'let me think'"
+        ];
+        
+        const suggestionsList = document.getElementById('suggestions-list');
+        suggestionsList.innerHTML = suggestions.map(suggestion => 
+            `<div class="mb-2">• ${suggestion}</div>`
+        ).join('');
+        
+        document.getElementById('suggestions').classList.remove('hidden');
+    }
+
+    function clearRewrite() {
+        document.getElementById('rewrite-textarea').value = '';
+        document.getElementById('analysis-results').classList.add('hidden');
+        document.getElementById('suggestions').classList.add('hidden');
+        document.getElementById('rewrite-display').textContent = 'Write your rewrite first';
+        document.getElementById('comparison-rewrite').textContent = 'Write your rewrite to see comparison';
+        document.getElementById('comparison-stats').innerHTML = '<strong>Improvements:</strong> Waiting for rewrite...';
+    }
+
+    function recordOriginal() {
+        if (recordingActive) return;
+        
+        recordingActive = true;
+        document.querySelector('[onclick="recordOriginal()"]').textContent = 'Recording...';
+        document.querySelector('[onclick="recordOriginal()"]').disabled = true;
+        
+        drillComponents.startMic({
+            onStart: function() {
+                console.log('Original recording started');
+            },
+            onStop: function(audioBlob, audioUrl) {
+                recordingActive = false;
+                document.querySelector('[onclick="recordOriginal()"]').textContent = '🎤 Record Original';
+                document.querySelector('[onclick="recordOriginal()"]').disabled = false;
+                
+                // Show audio player
+                const audio = document.getElementById('original-audio');
+                audio.src = audioUrl;
+                document.getElementById('audio-players').classList.remove('hidden');
+            },
+            onError: function(error) {
+                alert('Error accessing microphone: ' + error.message);
+                recordingActive = false;
+                document.querySelector('[onclick="recordOriginal()"]').textContent = '🎤 Record Original';
+                document.querySelector('[onclick="recordOriginal()"]').disabled = false;
+            }
+        });
+    }
+
+    function recordRewritten() {
+        const rewrite = document.getElementById('rewrite-textarea').value.trim();
+        if (!rewrite) {
+            alert('Please write your rewrite first!');
+            return;
+        }
+        
+        if (recordingActive) return;
+        
+        recordingActive = true;
+        document.querySelector('[onclick="recordRewritten()"]').textContent = 'Recording...';
+        document.querySelector('[onclick="recordRewritten()"]').disabled = true;
+        
+        // Update rewrite display
+        document.getElementById('rewrite-display').textContent = rewrite;
+        
+        drillComponents.startMic({
+            onStart: function() {
+                console.log('Rewritten recording started');
+            },
+            onStop: function(audioBlob, audioUrl) {
+                recordingActive = false;
+                document.querySelector('[onclick="recordRewritten()"]').textContent = '🎤 Record Rewritten';
+                document.querySelector('[onclick="recordRewritten()"]').disabled = false;
+                
+                // Show audio player
+                const audio = document.getElementById('rewritten-audio');
+                audio.src = audioUrl;
+                document.getElementById('audio-players').classList.remove('hidden');
+                
+                // Show feedback buttons
+                drillComponents.showFeedback('feedback-buttons', function(rating) {
+                    console.log('Switcheroo feedback:', rating);
+                });
+            },
+            onError: function(error) {
+                alert('Error accessing microphone: ' + error.message);
+                recordingActive = false;
+                document.querySelector('[onclick="recordRewritten()"]').textContent = '🎤 Record Rewritten';
+                document.querySelector('[onclick="recordRewritten()"]').disabled = false;
+            }
+        });
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        updateFillerIndicators();
+    });
+</script>
+{% endblock %}

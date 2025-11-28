@@ -1,0 +1,91 @@
+{% extends 'coach/drill_unified_base.html' %}
+
+{% block drill_content %}
+<div class="space-y-6">
+    <!-- Vowel Selection -->
+    <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-8 rounded-xl">
+        <h3 class="text-xl font-semibold text-gray-700 mb-6">Spin the wheel to get your vowel!</h3>
+        <div id="vowel-wheel-container" class="flex justify-center mb-6"></div>
+        
+        <!-- Selected Vowel Display -->
+        <div id="selected-vowel" class="hidden bg-white p-6 rounded-lg border-2 border-purple-300">
+            <h3 class="text-2xl font-bold text-purple-800 mb-4">Your Vowel: <span id="vowel-letter" class="text-4xl"></span></h3>
+            <div id="vowel-words" class="text-lg text-purple-700 mb-6"></div>
+            <div class="bg-purple-100 p-4 rounded-lg">
+                <p class="text-purple-800 font-medium">Now say 5 words starting with this vowel EXAGGERATEDLY!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="bg-blue-50 border-l-4 border-blue-400 p-6 rounded-lg">
+        <h3 class="text-lg font-semibold text-blue-800 mb-4">Instructions</h3>
+        <ol class="text-left text-blue-700 space-y-2">
+            <li>1. Spin the wheel to get a random vowel</li>
+            <li>2. Look at the example words for that vowel</li>
+            <li>3. Say 5 words starting with that vowel VERY EXAGGERATEDLY</li>
+            <li>4. Focus on stretching the vowel sound</li>
+            <li>5. Record yourself using the recording controls below</li>
+            <li>6. Review the ML analysis results</li>
+        </ol>
+    </div>
+
+    <!-- Exaggeration Tips -->
+    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-lg">
+        <h3 class="text-lg font-semibold text-yellow-800 mb-4">Exaggeration Tips</h3>
+        <ul class="text-left text-yellow-700 space-y-2">
+            <li>• Make the vowel sound 3x longer</li>
+            <li>• Open your mouth wider</li>
+            <li>• Use more facial expression</li>
+            <li>• Feel the vibration in your throat</li>
+            <li>• Practice in front of a mirror</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+// Drill-specific JavaScript for Vowel Vortex
+const vowelWords = {{ vowel_words|safe|default:"{}" }};
+const vowels = {{ vowels|safe|default:"[]" }};
+
+function getDrillSpecificParams() {
+    const vowelLetter = document.getElementById('vowel-letter');
+    const selectedVowel = vowelLetter ? vowelLetter.textContent.trim() : '';
+    return {
+        'phonetic_targets': selectedVowel
+    };
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Simple vowel selection (replace with spinning wheel if needed)
+    const container = document.getElementById('vowel-wheel-container');
+    const selectedVowelDiv = document.getElementById('selected-vowel');
+    const vowelLetterSpan = document.getElementById('vowel-letter');
+    const vowelWordsDiv = document.getElementById('vowel-words');
+    
+    if (container && vowels.length > 0) {
+        // Create simple buttons for vowel selection
+        vowels.forEach(vowel => {
+            const btn = document.createElement('button');
+            btn.textContent = vowel;
+            btn.className = 'bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg text-2xl font-bold mx-2 mb-2';
+            btn.onclick = function() {
+                vowelLetterSpan.textContent = vowel;
+                if (vowelWords[vowel]) {
+                    vowelWordsDiv.innerHTML = `
+                        <p class="mb-2">Example words:</p>
+                        <div class="flex flex-wrap gap-2 justify-center">
+                            ${vowelWords[vowel].map(word => 
+                                `<span class="bg-purple-200 px-3 py-1 rounded-full text-sm">${word}</span>`
+                            ).join('')}
+                        </div>
+                    `;
+                }
+                selectedVowelDiv.classList.remove('hidden');
+            };
+            container.appendChild(btn);
+        });
+    }
+});
+</script>
+{% endblock %}

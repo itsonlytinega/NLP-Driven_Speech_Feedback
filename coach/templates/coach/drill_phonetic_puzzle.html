@@ -1,0 +1,150 @@
+{% extends 'coach/drill_unified_base.html' %}
+
+{% block drill_content %}
+<div class="text-center">
+    <h2 class="text-3xl font-bold text-gray-800 mb-8">Phonetic Puzzle Builder</h2>
+    
+    <!-- Target Word -->
+    <div class="bg-gradient-to-r from-indigo-50 to-purple-50 p-8 rounded-xl mb-8">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Target Word</h3>
+        <div class="text-3xl font-bold text-indigo-800 mb-4" id="target-word">{{ selected_word.word }}</div>
+        <div class="text-lg text-indigo-600 mb-4">Phonetic: <span id="target-phonetics">{{ selected_word.phonetics|join:" " }}</span></div>
+        <button onclick="revealAnswer()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-2 rounded-lg transition-colors">
+            Reveal Answer
+        </button>
+    </div>
+
+    <!-- Drag and Drop Interface -->
+    <div class="mb-8">
+        <h3 class="text-xl font-semibold text-gray-700 mb-6">Build the Phonetic Spelling</h3>
+        <div id="phonetic-puzzle-container"></div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="bg-teal-50 border-l-4 border-teal-400 p-6 mb-8">
+        <h3 class="text-lg font-semibold text-teal-800 mb-4">📋 Instructions</h3>
+        <ol class="text-left text-teal-700 space-y-2">
+            <li>1. Look at the target word above</li>
+            <li>2. Drag phonetic symbols to the drop zone</li>
+            <li>3. Try to spell the word phonetically</li>
+            <li>4. Record yourself saying the word</li>
+            <li>5. Check your pronunciation against the answer</li>
+        </ol>
+    </div>
+
+    <!-- Practice Area -->
+    <div class="bg-gray-50 p-6 rounded-lg">
+        <h3 class="text-lg font-semibold text-gray-700 mb-4">Practice Area</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h4 class="font-medium text-gray-600 mb-2">Your Recording:</h4>
+                <div id="user-audio" class="bg-white p-4 rounded-lg border-2 border-dashed border-gray-300 min-h-20 flex items-center justify-center">
+                    <span class="text-gray-500">Click "Start Recording" to begin</span>
+                </div>
+            </div>
+            <div>
+                <h4 class="font-medium text-gray-600 mb-2">Phonetic Guide:</h4>
+                <div class="bg-white p-4 rounded-lg">
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <div><strong>θ</strong> = th (think)</div>
+                        <div><strong>ð</strong> = th (this)</div>
+                        <div><strong>ʃ</strong> = sh (ship)</div>
+                        <div><strong>ʒ</strong> = zh (measure)</div>
+                        <div><strong>tʃ</strong> = ch (church)</div>
+                        <div><strong>dʒ</strong> = j (judge)</div>
+                        <div><strong>ŋ</strong> = ng (sing)</div>
+                        <div><strong>r</strong> = r (red)</div>
+                        <div><strong>l</strong> = l (love)</div>
+                        <div><strong>w</strong> = w (water)</div>
+                        <div><strong>j</strong> = y (yes)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const targetWord = {{ selected_word|safe }};
+const phoneticSymbols = {{ phonetic_symbols|safe }};
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Create drag and drop interface
+    drillComponents.createDragDropInterface('phonetic-puzzle-container', phoneticSymbols, function(symbol, dropArea) {
+        // Check if the puzzle is complete
+        const droppedSymbols = Array.from(dropArea.children).map(el => el.dataset.symbol);
+        
+        if (droppedSymbols.length === targetWord.phonetics.length) {
+            // Check if the answer is correct
+            const isCorrect = JSON.stringify(droppedSymbols) === JSON.stringify(targetWord.phonetics);
+            
+            if (isCorrect) {
+                dropArea.style.backgroundColor = '#d1fae5'; // green background
+                setTimeout(() => {
+                    alert('🎉 Correct! Great job with the phonetic spelling!');
+                }, 500);
+            } else {
+                dropArea.style.backgroundColor = '#fef2f2'; // red background
+                setTimeout(() => {
+                    alert('❌ Not quite right. Try again!');
+                }, 500);
+            }
+        }
+    });
+
+    // Set up microphone for this drill
+    const micButton = document.getElementById('mic-button');
+    const userAudioDiv = document.getElementById('user-audio');
+    
+    micButton.addEventListener('click', async function() {
+        if (!drillComponents.isRecording) {
+            await drillComponents.startMic({
+                onStart: function() {
+                    micButton.textContent = '🛑 Stop Recording';
+                    micButton.classList.add('recording');
+                    drillStartTime = Date.now();
+                    userAudioDiv.innerHTML = '<div class="text-red-500 animate-pulse">🔴 Recording...</div>';
+                },
+                onStop: function(audioBlob, audioUrl) {
+                    micButton.textContent = '🎤 Start Recording';
+                    micButton.classList.remove('recording');
+                    
+                    userAudioDiv.innerHTML = `
+                        <audio controls class="w-full">
+                            <source src="${audioUrl}" type="audio/wav">
+                        </audio>
+                    `;
+                    
+                    // Show feedback buttons
+                    drillComponents.showFeedback('feedback-buttons', function(rating) {
+                        currentScore = rating === 'good' ? 8 : 4;
+                        document.getElementById('score').value = currentScore;
+                    });
+                },
+                onError: function(error) {
+                    alert('Error accessing microphone: ' + error.message);
+                    userAudioDiv.innerHTML = '<span class="text-red-500">❌ Recording failed</span>';
+                }
+            });
+        } else {
+            drillComponents.stopMic();
+        }
+    });
+});
+
+function revealAnswer() {
+    const targetPhonetics = document.getElementById('target-phonetics');
+    targetPhonetics.innerHTML = targetWord.phonetics.map(symbol => 
+        `<span class="bg-yellow-200 px-2 py-1 rounded mx-1">${symbol}</span>`
+    ).join('');
+}
+</script>
+
+<script>
+// Drill-specific JavaScript
+function getDrillSpecificParams() {
+    // Override this function in individual drill templates if needed
+    return {};
+}
+</script>
+{% endblock %}

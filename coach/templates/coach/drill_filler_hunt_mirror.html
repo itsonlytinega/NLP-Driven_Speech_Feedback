@@ -1,0 +1,544 @@
+{% extends 'coach/drill_unified_base.html' %}
+{% load static %}
+
+{% block drill_content %}
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="text-center">
+        <h2 class="text-3xl font-bold text-gray-800 mb-4">Filler Hunt Mirror Maze</h2>
+        <p class="text-lg text-gray-600 mb-6">Use your webcam mirror to hunt down filler words in real-time!</p>
+    </div>
+
+    <!-- Webcam Mirror -->
+    <div class="bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Mirror View</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Webcam Feed -->
+            <div class="bg-white rounded-lg p-4">
+                <h4 class="font-semibold text-gray-700 mb-3">Your Mirror</h4>
+                <div class="relative">
+                    <video id="webcam-video" autoplay muted class="w-full h-64 bg-gray-200 rounded-lg object-cover"></video>
+                    <div id="webcam-overlay" class="absolute inset-0 pointer-events-none">
+                        <!-- Filler detection overlays will appear here -->
+                    </div>
+                </div>
+                
+                <!-- Webcam Controls -->
+                <div class="mt-4 text-center space-x-4">
+                    <button id="start-webcam-btn" onclick="startWebcam()" 
+                            class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors">
+                        📹 Start Mirror
+                    </button>
+                    <button id="stop-webcam-btn" onclick="stopWebcam()" 
+                            class="px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition-colors hidden">
+                        ⏹️ Stop Mirror
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Filler Detection Display -->
+            <div class="bg-white rounded-lg p-4">
+                <h4 class="font-semibold text-gray-700 mb-3">Filler Detection</h4>
+                
+                <!-- Detection Status -->
+                <div class="mb-4">
+                    <div id="detection-status" class="text-lg font-semibold text-gray-600">Mirror not active</div>
+                </div>
+                
+                <!-- Real-time Stats -->
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="text-center">
+                        <div class="text-sm text-gray-600">Fillers Found</div>
+                        <div id="fillers-found" class="text-2xl font-bold text-red-600">0</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-sm text-gray-600">Hunts Made</div>
+                        <div id="hunts-made" class="text-2xl font-bold text-blue-600">0</div>
+                    </div>
+                </div>
+                
+                <!-- Hunt Button -->
+                <div class="text-center">
+                    <button id="hunt-btn" onclick="startHunting()" 
+                            class="px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition-colors disabled:opacity-50"
+                            disabled>
+                        🎯 Start Hunting
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Speech Challenge -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Speech Challenge</h3>
+        
+        <div class="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6 mb-6">
+            <h4 class="text-lg font-bold text-green-800 mb-3">Your Challenge</h4>
+            <div id="speech-challenge" class="text-lg text-gray-700 leading-relaxed mb-4">
+                {{ speech_challenge }}
+            </div>
+            
+            <!-- Challenge Controls -->
+            <div class="text-center space-x-4">
+                <button onclick="loadNewChallenge()" 
+                        class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition-colors">
+                    🎯 New Challenge
+                </button>
+                <button onclick="startSpeaking()" 
+                        class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors">
+                    🎤 Start Speaking
+                </button>
+            </div>
+        </div>
+        
+        <!-- Speaking Status -->
+        <div id="speaking-status" class="text-center hidden">
+            <div class="text-lg font-semibold text-gray-600 mb-4">Speaking in progress...</div>
+            <div class="flex justify-center space-x-2" id="speech-indicators">
+                <!-- Speech indicators will appear here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Filler Alert System -->
+    <div class="bg-gradient-to-r from-red-100 to-orange-100 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Filler Alert System</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Alert Display -->
+            <div class="bg-white rounded-lg p-4">
+                <h4 class="font-semibold text-gray-700 mb-3">Alert Display</h4>
+                <div id="alert-display" class="h-32 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <div class="text-gray-500">No alerts</div>
+                </div>
+            </div>
+            
+            <!-- Alert Settings -->
+            <div class="bg-white rounded-lg p-4">
+                <h4 class="font-semibold text-gray-700 mb-3">Alert Settings</h4>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">Alert Sensitivity</label>
+                        <input type="range" id="sensitivity-slider" min="1" max="10" value="5" 
+                               class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                               oninput="updateSensitivity(this.value)">
+                        <div class="text-center mt-1">
+                            <span id="sensitivity-value" class="text-sm font-semibold text-gray-800">Medium</span>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">Alert Type</label>
+                        <select id="alert-type" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            <option value="visual">Visual Flash</option>
+                            <option value="sound">Sound Alert</option>
+                            <option value="both">Both</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Hunt Statistics -->
+            <div class="bg-white rounded-lg p-4">
+                <h4 class="font-semibold text-gray-700 mb-3">Hunt Statistics</h4>
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Total Fillers</span>
+                        <span id="total-fillers" class="text-sm font-semibold text-gray-800">0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Hunt Accuracy</span>
+                        <span id="hunt-accuracy" class="text-sm font-semibold text-gray-800">0%</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Best Streak</span>
+                        <span id="best-streak" class="text-sm font-semibold text-gray-800">0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Current Streak</span>
+                        <span id="current-streak" class="text-sm font-semibold text-gray-800">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recording Section -->
+    <div class="bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Mirror Recording</h3>
+        
+        <div class="text-center">
+            <button id="record-btn" onclick="startRecording()" 
+                    class="px-8 py-4 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold text-lg transition-colors">
+                🎤 Start Recording
+            </button>
+            <div id="recording-status" class="mt-4 text-lg font-semibold text-gray-600">Ready to record your mirror session!</div>
+        </div>
+        
+        <!-- Audio Player -->
+        <div id="audio-player" class="mt-6 hidden">
+            <audio controls class="w-full" id="mirror-audio">
+                <source src="" type="audio/wav">
+            </audio>
+        </div>
+    </div>
+
+    <!-- Mirror Tips -->
+    <div class="bg-gradient-to-r from-indigo-100 to-purple-100 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Mirror Hunting Tips</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white rounded-lg p-4">
+                <h4 class="font-semibold text-gray-700 mb-3">Hunting Strategy</h4>
+                <ul class="text-sm text-gray-600 space-y-1">
+                    <li>• Watch your facial expressions when you speak</li>
+                    <li>• Notice when you pause or hesitate</li>
+                    <li>• Click to hunt when you detect a filler</li>
+                    <li>• Use the mirror to self-correct in real-time</li>
+                </ul>
+            </div>
+            
+            <div class="bg-white rounded-lg p-4">
+                <h4 class="font-semibold text-gray-700 mb-3">Alert Types</h4>
+                <ul class="text-sm text-gray-600 space-y-1">
+                    <li>• <span class="text-red-600">Red Flash:</span> Filler detected</li>
+                    <li>• <span class="text-yellow-600">Yellow Flash:</span> Hesitation detected</li>
+                    <li>• <span class="text-green-600">Green Flash:</span> Clean speech</li>
+                    <li>• <span class="text-blue-600">Blue Flash:</span> Successful hunt</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback -->
+    <div id="feedback-container" class="bg-gray-50 rounded-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">Mirror Hunt Feedback</h3>
+        <div id="feedback-buttons"></div>
+    </div>
+</div>
+
+<script>
+// Drill-specific JavaScript
+function getDrillSpecificParams() {
+    // Override this function in individual drill templates if needed
+    return {};
+}
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/drills.js' %}"></script>
+<script>
+    let webcamActive = false;
+    let huntingActive = false;
+    let speakingActive = false;
+    let recordingActive = false;
+    let fillersFound = 0;
+    let huntsMade = 0;
+    let totalFillers = 0;
+    let currentStreak = 0;
+    let bestStreak = 0;
+    let sensitivity = 5;
+    let alertType = 'visual';
+
+    const challenges = {{ speech_challenges|safe }};
+
+    function startWebcam() {
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                const video = document.getElementById('webcam-video');
+                video.srcObject = stream;
+                webcamActive = true;
+                
+                document.getElementById('start-webcam-btn').classList.add('hidden');
+                document.getElementById('stop-webcam-btn').classList.remove('hidden');
+                document.getElementById('hunt-btn').disabled = false;
+                document.getElementById('detection-status').textContent = 'Mirror active - Ready to hunt!';
+                
+                // Start filler detection simulation
+                startFillerDetection();
+            })
+            .catch(error => {
+                alert('Error accessing webcam: ' + error.message);
+            });
+    }
+
+    function stopWebcam() {
+        const video = document.getElementById('webcam-video');
+        if (video.srcObject) {
+            video.srcObject.getTracks().forEach(track => track.stop());
+            video.srcObject = null;
+        }
+        
+        webcamActive = false;
+        huntingActive = false;
+        
+        document.getElementById('start-webcam-btn').classList.remove('hidden');
+        document.getElementById('stop-webcam-btn').classList.add('hidden');
+        document.getElementById('hunt-btn').disabled = true;
+        document.getElementById('hunt-btn').textContent = '🎯 Start Hunting';
+        document.getElementById('detection-status').textContent = 'Mirror not active';
+        
+        // Clear overlays
+        document.getElementById('webcam-overlay').innerHTML = '';
+    }
+
+    function startHunting() {
+        if (!webcamActive) return;
+        
+        huntingActive = !huntingActive;
+        
+        if (huntingActive) {
+            document.getElementById('hunt-btn').textContent = '⏹️ Stop Hunting';
+            document.getElementById('detection-status').textContent = 'Hunting mode active - Click to hunt fillers!';
+            
+            // Add click handler to video for hunting
+            const video = document.getElementById('webcam-video');
+            video.addEventListener('click', huntFiller);
+        } else {
+            document.getElementById('hunt-btn').textContent = '🎯 Start Hunting';
+            document.getElementById('detection-status').textContent = 'Mirror active - Ready to hunt!';
+            
+            // Remove click handler
+            const video = document.getElementById('webcam-video');
+            video.removeEventListener('click', huntFiller);
+        }
+    }
+
+    function huntFiller(event) {
+        if (!huntingActive) return;
+        
+        huntsMade++;
+        document.getElementById('hunts-made').textContent = huntsMade;
+        
+        // Simulate successful hunt
+        const success = Math.random() < 0.7; // 70% success rate
+        
+        if (success) {
+            fillersFound++;
+            currentStreak++;
+            if (currentStreak > bestStreak) {
+                bestStreak = currentStreak;
+            }
+            
+            document.getElementById('fillers-found').textContent = fillersFound;
+            document.getElementById('current-streak').textContent = currentStreak;
+            document.getElementById('best-streak').textContent = bestStreak;
+            
+            // Show success alert
+            showAlert('success', 'Filler hunted! +1 point');
+            
+            // Add visual effect to overlay
+            addHuntEffect(event.offsetX, event.offsetY);
+        } else {
+            currentStreak = 0;
+            document.getElementById('current-streak').textContent = currentStreak;
+            
+            // Show miss alert
+            showAlert('miss', 'Miss! Try again');
+        }
+        
+        updateHuntAccuracy();
+    }
+
+    function addHuntEffect(x, y) {
+        const overlay = document.getElementById('webcam-overlay');
+        const effect = document.createElement('div');
+        effect.className = 'absolute w-4 h-4 bg-green-500 rounded-full animate-ping pointer-events-none';
+        effect.style.left = (x - 8) + 'px';
+        effect.style.top = (y - 8) + 'px';
+        
+        overlay.appendChild(effect);
+        
+        setTimeout(() => {
+            effect.remove();
+        }, 1000);
+    }
+
+    function startFillerDetection() {
+        if (!webcamActive) return;
+        
+        // Simulate filler detection every 3-5 seconds
+        setInterval(() => {
+            if (!webcamActive) return;
+            
+            // Random chance of detecting a filler based on sensitivity
+            const detectionChance = (sensitivity / 10) * 0.3; // Max 30% chance
+            
+            if (Math.random() < detectionChance) {
+                detectFiller();
+            }
+        }, Math.random() * 2000 + 3000); // 3-5 seconds
+    }
+
+    function detectFiller() {
+        totalFillers++;
+        document.getElementById('total-fillers').textContent = totalFillers;
+        
+        // Show filler detection alert
+        showAlert('filler', 'Filler detected! Hunt it down!');
+        
+        // Add red flash overlay
+        addFillerFlash();
+    }
+
+    function addFillerFlash() {
+        const overlay = document.getElementById('webcam-overlay');
+        const flash = document.createElement('div');
+        flash.className = 'absolute inset-0 bg-red-500 opacity-50 pointer-events-none';
+        
+        overlay.appendChild(flash);
+        
+        setTimeout(() => {
+            flash.remove();
+        }, 500);
+    }
+
+    function showAlert(type, message) {
+        const alertDisplay = document.getElementById('alert-display');
+        
+        let alertClass = 'bg-gray-100 text-gray-500';
+        let icon = '📢';
+        
+        switch (type) {
+            case 'filler':
+                alertClass = 'bg-red-100 text-red-800';
+                icon = '🚨';
+                break;
+            case 'success':
+                alertClass = 'bg-green-100 text-green-800';
+                icon = '✅';
+                break;
+            case 'miss':
+                alertClass = 'bg-yellow-100 text-yellow-800';
+                icon = '❌';
+                break;
+        }
+        
+        alertDisplay.className = `h-32 ${alertClass} rounded-lg flex items-center justify-center`;
+        alertDisplay.innerHTML = `<div class="text-center"><div class="text-2xl mb-2">${icon}</div><div class="font-semibold">${message}</div></div>`;
+        
+        // Play sound if enabled
+        if (alertType === 'sound' || alertType === 'both') {
+            playAlertSound(type);
+        }
+        
+        // Clear alert after 2 seconds
+        setTimeout(() => {
+            alertDisplay.className = 'h-32 bg-gray-100 rounded-lg flex items-center justify-center';
+            alertDisplay.innerHTML = '<div class="text-gray-500">No alerts</div>';
+        }, 2000);
+    }
+
+    function playAlertSound(type) {
+        // Create audio context for sound alerts
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        let frequency = 800; // Default frequency
+        
+        switch (type) {
+            case 'filler':
+                frequency = 400; // Lower frequency for filler detection
+                break;
+            case 'success':
+                frequency = 600; // Medium frequency for success
+                break;
+            case 'miss':
+                frequency = 300; // Lower frequency for miss
+                break;
+        }
+        
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.2);
+    }
+
+    function updateSensitivity(value) {
+        sensitivity = parseInt(value);
+        const sensitivityText = sensitivity <= 3 ? 'Low' : sensitivity <= 7 ? 'Medium' : 'High';
+        document.getElementById('sensitivity-value').textContent = sensitivityText;
+    }
+
+    function updateHuntAccuracy() {
+        const accuracy = huntsMade > 0 ? Math.round((fillersFound / huntsMade) * 100) : 0;
+        document.getElementById('hunt-accuracy').textContent = accuracy + '%';
+    }
+
+    function loadNewChallenge() {
+        const randomChallenge = challenges[Math.floor(Math.random() * challenges.length)];
+        document.getElementById('speech-challenge').textContent = randomChallenge;
+    }
+
+    function startSpeaking() {
+        if (speakingActive) return;
+        
+        speakingActive = true;
+        document.getElementById('speaking-status').classList.remove('hidden');
+        
+        // Add speech indicators
+        const indicators = document.getElementById('speech-indicators');
+        indicators.innerHTML = '<div class="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>'.repeat(5);
+        
+        // Simulate speaking duration
+        setTimeout(() => {
+            speakingActive = false;
+            document.getElementById('speaking-status').classList.add('hidden');
+        }, 10000); // 10 seconds
+    }
+
+    function startRecording() {
+        if (recordingActive) return;
+        
+        recordingActive = true;
+        document.getElementById('record-btn').textContent = 'Recording...';
+        document.getElementById('record-btn').disabled = true;
+        document.getElementById('recording-status').textContent = 'Recording your mirror hunt session...';
+        
+        drillComponents.startMic({
+            onStart: function() {
+                console.log('Mirror hunt recording started');
+            },
+            onStop: function(audioBlob, audioUrl) {
+                recordingActive = false;
+                document.getElementById('record-btn').textContent = '🎤 Start Recording';
+                document.getElementById('record-btn').disabled = false;
+                document.getElementById('recording-status').textContent = 'Recording complete!';
+                
+                // Show audio playback
+                const audioPlayer = document.getElementById('audio-player');
+                const audio = document.getElementById('mirror-audio');
+                audio.src = audioUrl;
+                audioPlayer.classList.remove('hidden');
+                
+                // Show feedback buttons
+                drillComponents.showFeedback('feedback-buttons', function(rating) {
+                    console.log('Mirror hunt feedback:', rating);
+                });
+            },
+            onError: function(error) {
+                alert('Error accessing microphone: ' + error.message);
+                recordingActive = false;
+                document.getElementById('record-btn').textContent = '🎤 Start Recording';
+                document.getElementById('record-btn').disabled = false;
+            }
+        });
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        updateSensitivity(5);
+        updateHuntAccuracy();
+    });
+</script>
+{% endblock %}

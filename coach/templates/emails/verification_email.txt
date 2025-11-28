@@ -1,0 +1,17 @@
+Verify Your Email Address - {{ site_name }}
+
+Hello {{ user.first_name }},
+
+Thank you for signing up for {{ site_name }}! To complete your registration and activate your account, please verify your email address by visiting the following link:
+
+{{ verification_link }}
+
+This verification link will expire in 1 hour for security reasons. If you don't verify your email within this time, you'll need to request a new verification email.
+
+If you didn't create an account with {{ site_name }}, please ignore this email.
+
+---
+{{ site_name }}
+This email was sent from {{ site_name }}. If you have any questions, please contact our support team.
+
+

@@ -1,0 +1,225 @@
+{% extends 'coach/base.html' %}
+
+{% block title %}Security Settings - Verbal Coach{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h1 class="text-2xl font-bold text-gray-900 mb-6">Security Settings</h1>
+            
+            <!-- Email Verification Status Card -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        {% if user.is_email_verified %}
+                            <i class="fas fa-check-circle text-2xl text-green-600"></i>
+                        {% else %}
+                            <i class="fas fa-exclamation-circle text-2xl text-yellow-600"></i>
+                        {% endif %}
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-medium text-gray-900">Email Verification Status</h3>
+                        <p class="text-sm text-gray-600">
+                            {% if user.is_email_verified %}
+                                Your email address has been verified and is secure.
+                            {% else %}
+                                Your email address is not verified. Please verify it to enable all security features.
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Email Verification Actions -->
+            {% if not user.is_email_verified %}
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Verify Your Email Address</h3>
+                <p class="text-sm text-gray-600 mb-4">
+                    Email verification is required to enable 2FA and access all security features.
+                </p>
+                <form method="post" class="inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="send_verification">
+                    <button type="submit" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded">
+                        <i class="fas fa-envelope mr-2"></i>Send Verification Email
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+
+            <!-- 2FA Status Card -->
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            {% if user.is_2fa_enabled and user.has_2fa_setup %}
+                                <i class="fas fa-shield-alt text-2xl text-green-600"></i>
+                            {% else %}
+                                <i class="fas fa-shield-alt text-2xl text-gray-400"></i>
+                            {% endif %}
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="text-lg font-medium text-gray-900">Two-Factor Authentication (2FA)</h3>
+                            <p class="text-sm text-gray-600">
+                                {% if user.is_2fa_enabled and user.has_2fa_setup %}
+                                    Two-factor authentication is enabled and configured.
+                                {% elif user.is_2fa_enabled %}
+                                    Two-factor authentication is enabled but not properly configured.
+                                {% else %}
+                                    Two-factor authentication is disabled.
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        {% if user.is_2fa_enabled and user.has_2fa_setup %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Enabled
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                Disabled
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2FA Actions -->
+            {% if user.is_email_verified %}
+            <div class="bg-white border border-gray-200 rounded-lg p-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">2FA Management</h3>
+                <div class="flex space-x-4">
+                    {% if not user.is_2fa_enabled or not user.has_2fa_setup %}
+                    <form method="post" class="inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="enable_2fa">
+                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                            <i class="fas fa-plus mr-2"></i>Enable 2FA
+                        </button>
+                    </form>
+                    {% else %}
+                    <form method="post" class="inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="disable_2fa">
+                        <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" 
+                                onclick="return confirm('Are you sure you want to disable 2FA? This will reduce your account security.')">
+                            <i class="fas fa-times mr-2"></i>Disable 2FA
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">2FA Management</h3>
+                <p class="text-sm text-gray-600 mb-4">
+                    Please verify your email address before enabling 2FA.
+                </p>
+                <button disabled class="bg-gray-300 text-gray-500 font-bold py-2 px-4 rounded cursor-not-allowed">
+                    <i class="fas fa-lock mr-2"></i>Enable 2FA (Email verification required)
+                </button>
+            </div>
+            {% endif %}
+
+            <!-- Passkey Management -->
+            <div class="bg-white border border-gray-200 rounded-lg p-6 mt-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900">Passkey (Biometric) Authentication</h3>
+                        <p class="text-sm text-gray-600 mt-1">Use fingerprint, Face ID, or security key to sign in</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        {% if user.has_passkey %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <i class="fas fa-check mr-1"></i>Configured
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                Not Configured
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if user.has_passkey %}
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-info-circle text-blue-400"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-blue-700">
+                                You have passkeys configured. You can manage them or add new ones.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-fingerprint text-2xl text-yellow-600"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-gray-700">
+                                <strong>Optional Feature:</strong> Passkeys provide a secure and convenient way to sign in using your device's biometric authentication (fingerprint, Face ID, Windows Hello) or a hardware security key.
+                            </p>
+                            <p class="text-sm text-gray-600 mt-2">
+                                Note: This feature requires compatible hardware. If your device doesn't support biometrics, you can continue using other 2FA methods.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="flex space-x-4">
+                    <a href="{% url 'coach:manage_passkeys' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+                        <i class="fas fa-fingerprint mr-2"></i>
+                        {% if user.has_passkey %}
+                            Manage Passkeys
+                        {% else %}
+                            Set Up Passkey
+                        {% endif %}
+                    </a>
+                </div>
+            </div>
+
+            <!-- Account Information -->
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mt-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Account Information</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Email Address</label>
+                        <p class="mt-1 text-sm text-gray-900">{{ user.email }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Member Since</label>
+                        <p class="mt-1 text-sm text-gray-900">{{ user.date_joined|date:"M d, Y" }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Last Login</label>
+                        <p class="mt-1 text-sm text-gray-900">{{ user.last_login|date:"M d, Y H:i"|default:"Never" }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Account Status</label>
+                        <p class="mt-1 text-sm text-gray-900">
+                            {% if user.is_active %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    Active
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                    Inactive
+                                </span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
