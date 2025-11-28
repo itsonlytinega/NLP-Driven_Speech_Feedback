@@ -28,12 +28,12 @@ This system provides real-time speech analysis and feedback across multiple dime
 ## Features
 
 ### Core Functionality
-- 🎤 **Speech Session Recording** - Upload or record audio directly in browser
-- 📊 **Comprehensive Analysis** - Filler words, pacing, clarity, and pronunciation scoring
-- 🎯 **Personalized Drill Recommendations** - AI-powered drill suggestions based on analysis
-- 📈 **Progress Tracking** - Historical analysis and performance trends
-- 🔐 **Secure Authentication** - Email verification, 2FA (TOTP), and WebAuthn passkeys
-- 🌐 **REST API** - Full API access for speech sessions and analytics
+-  **Speech Session Recording** - Upload or record audio directly in browser
+-  **Comprehensive Analysis** - Filler words, pacing, clarity, and pronunciation scoring
+-  **Personalized Drill Recommendations** - AI-powered drill suggestions based on analysis
+-  **Progress Tracking** - Historical analysis and performance trends
+-  **Secure Authentication** - Email verification, 2FA (TOTP), and WebAuthn passkeys
+-  **REST API** - Full API access for speech sessions and analytics
 
 ### Drill Types
 - **Filler Words** - Filler Zap Game, Filler Hunt Mirror, Silent Switcheroo
